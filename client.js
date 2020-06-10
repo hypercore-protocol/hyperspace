@@ -191,4 +191,8 @@ class RemoteHypercore extends Nanoresource {
   has (seq, cb) {
     return maybe(cb, this._has(seq))
   }
+
+  replicate () {
+    throw new Error('Cannot call replicate on a RemoteHyperdrive')
+  }
 }
