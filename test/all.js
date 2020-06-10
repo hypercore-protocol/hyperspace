@@ -198,7 +198,7 @@ test('can run a hypertrie on remote hypercore', async t => {
   t.end()
 })
 
-test.only('can run a hyperdrive on a remote hypercore', async t => {
+test.skip('can run a hyperdrive on a remote hypercore', async t => {
   const { server, store, cleanup } = await create()
 
   const drive = hyperdrive(store, null, {

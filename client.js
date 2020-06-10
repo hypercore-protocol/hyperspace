@@ -205,6 +205,8 @@ class RemoteHypercore extends Nanoresource {
     return maybe(cb, this._has(seq))
   }
 
+  // TODO: Unimplemented methods
+
   download () {
     return {}
   }
