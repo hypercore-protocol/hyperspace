@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "tape test/*.js",
+    "build": "protocol-buffers lib/schema.proto -o lib/messages.js"
   },
   "repository": {
     "type": "git",
@@ -29,10 +30,12 @@
     "corestore": "^5.5.0",
     "corestore-swarm-networking": "^5.5.1",
     "hypertrie": "^5.0.1",
-    "nanoresource-promise": "^1.2.2"
+    "nanoresource-promise": "^1.2.2",
+    "protocol-buffers-encodings": "^1.1.0"
   },
   "devDependencies": {
     "hyperdrive": "^10.12.2",
+    "protocol-buffers": "^4.1.2",
     "tape": "^5.0.1"
   }
 }

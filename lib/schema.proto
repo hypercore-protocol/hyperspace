@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+message Error {
+  int32 code = 1;
+  string message = 2;
+  string details = 3;
+}
+
+message HypercoreOptions {}
+
+message OpenRequest {
+  bytes key = 1;
+  HypercoreOptions opts = 2;
+}
+message OpenResponse {
+  uint32 id = 1;
+  bytes key = 2;
+  HypercoreOptions opts = 3;
+}
+
+message CloseRequest {
+  uint32 id = 1;
+}
+message CloseResponse {}
+
+message GetRequest {
+  uint32 id = 1;
+  repeated uint64 seqs = 2;
+}
+message GetResponse {
+  repeated bytes blocks = 1;
+}
