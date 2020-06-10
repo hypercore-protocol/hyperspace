@@ -1,9 +1,9 @@
-syntax = "proto3";
+syntax = "proto2";
 
 message Error {
-  int32 code = 1;
-  string message = 2;
-  string details = 3;
+  required int32 code = 1;
+  required string message = 2;
+  optional string details = 3;
 }
 
 message HypercoreOptions {}
@@ -11,75 +11,76 @@ message HypercoreOptions {}
 // Top-level Methods
 
 message OpenRequest {
-  uint32 id = 1;
-  bytes key = 2;
-  string name = 3;
-  HypercoreOptions opts = 4;
+  required uint32 id = 1;
+  optional bytes key = 2;
+  optional string name = 3;
+  optional HypercoreOptions opts = 4;
 }
 message OpenResponse {
-  bytes key = 2;
-  uint64 length = 3;
-  uint64 byteLength = 4;
-  bool writable = 5;
+  required bytes key = 2;
+  required uint64 length = 3;
+  required uint64 byteLength = 4;
+  required bool writable = 5;
 }
 
 message CloseRequest {
-  uint32 id = 1;
+  required uint32 id = 1;
 }
 
 // Hypercore Methods
 
 message GetRequest {
-  uint32 id = 1;
-  uint64 seq = 2;
-  bool wait = 3;
-  bool ifAvailable = 4;
+  required uint32 id = 1;
+  required uint64 seq = 2;
+  optional bool wait = 3;
+  optional bool ifAvailable = 4;
 }
 message GetResponse {
-  bytes block = 1;
+  optional bytes block = 1;
 }
 
 message AppendRequest {
-  uint32 id = 1;
+  required uint32 id = 1;
   repeated bytes blocks = 2;
 }
 message AppendResponse {
-  uint64 length = 1;
-  uint64 byteLength = 2;
-  uint64 seq = 3;
+  required uint64 length = 1;
+  required uint64 byteLength = 2;
+  required uint64 seq = 3;
 }
 
 message UpdateRequest {
-  uint32 id = 1;
-  uint64 minLength = 2;
-  bool ifAvailable = 3;
+  required uint32 id = 1;
+  optional uint64 minLength = 2;
+  optional bool ifAvailable = 3;
+  optional bool hash = 4 [default = true]; 
 }
 
 message SeekRequest {
-  uint32 id = 1;
-  uint64 byteOffset = 2;
-  uint64 start = 3;
-  uint64 end = 4;
-  bool wait = 5;
-  bool ifAvailable = 6;
+  required uint32 id = 1;
+  required uint64 byteOffset = 2;
+  optional uint64 start = 3;
+  optional uint64 end = 4;
+  optional bool wait = 5;
+  optional bool ifAvailable = 6;
 }
 
 message SeekResponse {
-  uint64 seq = 1;
-  uint64 blockOffset = 2;
+  required uint64 seq = 1;
+  required uint64 blockOffset = 2;
 }
 
 message HasRequest {
-  uint32 id = 1;
-  uint64 seq = 2;
+  required uint32 id = 1;
+  required uint64 seq = 2;
 }
 message HasResponse {
-  bool has = 1;
+  required bool has = 1;
 }
 
 // Events
 
 message AppendEvent {
-  uint64 length = 1;
-  uint64 byteLength = 2;
+  required uint64 length = 1;
+  required uint64 byteLength = 2;
 }

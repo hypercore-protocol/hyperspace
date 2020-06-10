@@ -97,10 +97,10 @@ module.exports = class Hyperspace extends Nanoresource {
         if (!core) throw new Error('Invalid session.')
         return this._rpcAppend(core, blocks)
       },
-      async update ({ id, ifAvailable, minLength }) {
+      async update ({ id, ifAvailable, minLength, hash }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
-        return this._rpcUpdate(core, { ifAvailable, minLength })
+        return this._rpcUpdate(core, { ifAvailable, minLength, hash })
       },
       async seek ({ id, byteOffset, start, end, wait, ifAvailable }) {
         const core = sessions.get(id)
