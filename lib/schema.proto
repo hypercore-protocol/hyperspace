@@ -9,13 +9,15 @@ message Error {
 message HypercoreOptions {}
 
 message OpenRequest {
-  bytes key = 1;
-  HypercoreOptions opts = 2;
-}
-message OpenResponse {
   uint32 id = 1;
   bytes key = 2;
   HypercoreOptions opts = 3;
+}
+message OpenResponse {
+  bytes key = 2;
+  uint64 length = 3;
+  uint64 byteLength = 4;
+  bool writable = 5;
 }
 
 message CloseRequest {
@@ -25,8 +27,25 @@ message CloseResponse {}
 
 message GetRequest {
   uint32 id = 1;
-  repeated uint64 seqs = 2;
+  uint64 seq = 2;
 }
 message GetResponse {
-  repeated bytes blocks = 1;
+  bytes block = 1;
+}
+
+message AppendRequest {
+  uint32 id = 1;
+  repeated bytes blocks = 2;
+}
+message AppendResponse {
+  uint64 length = 1;
+  uint64 byteLength = 2;
+}
+
+message HasRequest {
+  uint32 id = 1;
+  uint64 seq = 2;
+}
+message HasResponse {
+  bool has = 1;
 }

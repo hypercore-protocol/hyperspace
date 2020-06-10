@@ -1,27 +1,13 @@
 const Corestore = require('corestore')
 const Networker = require('corestore-swarm-networking')
-const RPC = require('arpeecee')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
-const Sessions = require('./lib/sessions')
-const {
-  OpenRequest,
-  OpenResponse,
-  CloseRequest,
-  CloseResponse,
-  GetRequest,
-  GetResponse,
-  HypercoreOptions,
-  Error
-} = require('./lib/messages')
+const { Server: RPCServer } = require('./lib/rpc')
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
-
     this.corestore = new Corestore(opts.storage || './storage')
-    this.sessions = new Map()
-
     // Set in _open
     this.server = null
   }
@@ -43,24 +29,53 @@ module.exports = class Hyperspace extends Nanoresource {
   }
 
   // Private Methods
-  async _startListening () {
 
+  _onConnection (client) {
+    console.log('got a new connection')
+    const sessions = new Map()
+    client.onRequest(this, {
+      async open ({ id, key, opts }) {
+        console.log('in open')
+        let core = sessions.get(id)
+        if (core) throw new Error('Should not reuse session IDs')
+        core = this.corestore.get({ key, ...opts })
+        sessions.set(id, core)
+        // TODO: Delete session if ready fails.
+        await new Promise((resolve, reject) => {
+          core.ready(err => {
+            if (err) return reject(err)
+            return resolve()
+          })
+        })
+        return {
+          key: core.key,
+          length: core.length,
+          byteLength: core.byteLength,
+          writable: core.writable
+        }
+      },
+      async close ({ id }) {
+        console.log('close')
+      },
+      async get ({ id, seq }) {
+        console.log('get')
+      }
+    })
+  }
+
+  async _startListening () {
+    this.server = new RPCServer(this._onConnection.bind(this))
+    return this.server.listen()
   }
 
   async _stopListening () {
-
+    // TODO: Stop listening
   }
 
   // RPC Methods
 
   _rpcOpen (req) {
     const keyString = keyToString(req.key)
-    let sessions = this.sessions.get(keyString)
-    if (!sessions) {
-      sessions = []
-      this.sessions.set(keyString, sessions)
-    }
-    sessions
   }
 
   _rpcClose (req) {
@@ -69,6 +84,11 @@ module.exports = class Hyperspace extends Nanoresource {
 
   _rpcGet (req) {
 
+  }
+
+  // Public Methods
+  ready () {
+    return this.open()
   }
 }
 
