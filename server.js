@@ -34,10 +34,10 @@ module.exports = class Hyperspace extends Nanoresource {
     console.log('got a new connection')
     const sessions = new Map()
     client.onRequest(this, {
-      async open ({ id, key, opts }) {
+      async open ({ id, key, name, opts }) {
         let core = sessions.get(id)
         if (core) throw new Error('Should not reuse session IDs')
-        core = this.corestore.get({ key, ...opts })
+        core = this.corestore.get({ key, _name: name, ...opts })
         sessions.set(id, core)
         // TODO: Delete session if ready fails.
         await new Promise((resolve, reject) => {

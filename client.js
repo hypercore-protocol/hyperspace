@@ -4,18 +4,20 @@ const hypercoreCrypto = require('hypercore-crypto')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const { Client: RPCClient } = require('./lib/rpc')
 
-module.exports = class HyperspaceClient extends Nanoresource {
+module.exports = class RemoteCorestore extends Nanoresource {
   constructor (opts = {}) {
     super()
-    this._client = null
+    this._client = opts.client
+    this._name = opts.name
     this._sessions = []
   }
 
   _open () {
-    this._client = new RPCClient()
+    if (!this._client) this._client = new RPCClient()
   }
 
   _close () {
+    if (this._name) return
     return this._client.destroy()
   }
 
@@ -23,13 +25,28 @@ module.exports = class HyperspaceClient extends Nanoresource {
     return maybe(cb, this.open())
   }
 
+  replicate () {
+    throw new Error('Cannot call replicate on a RemoteCorestore')
+  }
+
+  default (opts = {}) {
+    return new RemoteHypercore(this._client, this._name, 0, opts)
+  }
+
   get (key, opts = {}) {
-    return new RemoteHypercore(this._client, 0, key, opts)
+    return new RemoteHypercore(this._client, this._name, 0, key, opts)
+  }
+
+  namespace (name) {
+    return new this.constructor({
+      client: this._client,
+      name
+    })
   }
 }
 
 class RemoteHypercore extends Nanoresource {
-  constructor (client, id, key, opts) {
+  constructor (client, name, id, key, opts) {
     super()
     this.key = key
     this.discoveryKey = null
@@ -38,6 +55,7 @@ class RemoteHypercore extends Nanoresource {
     this.writable = false
 
     this._client = client
+    this._name = name
     this._id = id
 
     this.ready(() => {})
@@ -58,6 +76,7 @@ class RemoteHypercore extends Nanoresource {
     const rsp = await this._client.open({
       id: this._id,
       key: this._key,
+      name: this._name,
       opts: {}
     })
     this.key = rsp.key

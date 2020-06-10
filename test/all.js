@@ -1,13 +1,9 @@
 const test = require('tape')
-const HyperspaceClient = require('../client')
+const RemoteCorestore = require('../client')
 const HyperspaceServer = require('../server')
 
 test('can open a core', async t => {
-  const server = new HyperspaceServer()
-  await server.ready()
-
-  const client = new HyperspaceClient()
-  await client.ready()
+  const { client, server, cleanup } = await create()
 
   const core = client.get()
   await core.ready()
@@ -17,8 +13,7 @@ test('can open a core', async t => {
   t.same(core.key.length, 32)
   t.same(core.discoveryKey.length, 32)
 
-  await client.close()
-  await server.close()
+  await cleanup()
   t.end()
 })
 
@@ -143,7 +138,7 @@ async function create () {
   const server = new HyperspaceServer()
   await server.ready()
 
-  const client = new HyperspaceClient()
+  const client = new RemoteCorestore()
   await client.ready()
 
   const cleanup = () => Promise.all([
