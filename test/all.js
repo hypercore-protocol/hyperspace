@@ -1,11 +1,13 @@
 const test = require('tape')
+const tmp = require('tmp-promise')
+const hypertrie = require('hypertrie')
 const RemoteCorestore = require('../client')
 const HyperspaceServer = require('../server')
 
 test('can open a core', async t => {
-  const { client, server, cleanup } = await create()
+  const { store, server, cleanup } = await create()
 
-  const core = client.get()
+  const core = store.get()
   await core.ready()
 
   t.same(core.byteLength, 0)
@@ -18,9 +20,9 @@ test('can open a core', async t => {
 })
 
 test('can get a block', async t => {
-  const { server, client, cleanup } = await create()
+  const { server, store, cleanup } = await create()
 
-  const core = client.get()
+  const core = store.get()
   await core.ready()
 
   await core.append(Buffer.from('hello world', 'utf8'))
@@ -32,9 +34,9 @@ test('can get a block', async t => {
 })
 
 test('length/byteLength update correctly on append', async t => {
-  const { server, client, cleanup } = await create()
+  const { server, store, cleanup } = await create()
 
-  const core = client.get()
+  const core = store.get()
   await core.ready()
 
   let appendedCount = 0
@@ -60,9 +62,9 @@ test('length/byteLength update correctly on append', async t => {
 })
 
 test('update with current length returns', async t => {
-  const { server, client, cleanup } = await create()
+  const { server, store, cleanup } = await create()
 
-  const core = client.get()
+  const core = store.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -86,9 +88,9 @@ test('update with current length returns', async t => {
 })
 
 test('seek works correctly', async t => {
-  const { server, client, cleanup } = await create()
+  const { server, store, cleanup } = await create()
 
-  const core = client.get()
+  const core = store.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -117,9 +119,9 @@ test('seek works correctly', async t => {
 })
 
 test('has works correctly', async t => {
-  const { server, client, cleanup } = await create()
+  const { server, store, cleanup } = await create()
 
-  const core = client.get()
+  const core = store.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -130,21 +132,59 @@ test('has works correctly', async t => {
   t.true(doesHave)
   t.false(doesNotHave)
 
+  await core.close()
+  await cleanup()
+  t.end()
+})
+
+test('corestore default get works', async t => {
+  const { server, store, cleanup } = await create()
+
+  const ns1 = store.namespace('blah')
+  const ns2 = store.namespace('blah2')
+
+  var core = ns1.default()
+  await core.ready()
+
+  const buf = Buffer.from('hello world', 'utf8')
+  await core.append(buf)
+
+  await core.close()
+
+  core = ns1.default()
+  await core.ready()
+
+  t.same(core.length, 1)
+  t.true(core.writable)
+
+  core = ns2.default()
+  await core.ready()
+  t.same(core.length, 0)
+
+  await cleanup()
+  t.end()
+})
+
+test('can run a hypertrie on remote hypercore', async t => {
+  const { server, store, cleanup } = await create()
+
   await cleanup()
   t.end()
 })
 
 async function create () {
-  const server = new HyperspaceServer()
+  const tmpDir = await tmp.dir({ unsafeCleanup: true })
+  const server = new HyperspaceServer({ storage: tmpDir.path })
   await server.ready()
 
-  const client = new RemoteCorestore()
-  await client.ready()
+  const store = new RemoteCorestore()
+  await store.ready()
 
   const cleanup = () => Promise.all([
+    tmpDir.cleanup(),
     server.close(),
-    client.close()
+    store.close()
   ])
 
-  return { server, client, cleanup }
+  return { server, store, cleanup }
 }

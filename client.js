@@ -4,12 +4,26 @@ const hypercoreCrypto = require('hypercore-crypto')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const { Client: RPCClient } = require('./lib/rpc')
 
+class Sessions {
+  constructor () {
+    this._counter = 0
+    this._freeList = []
+  }
+  create () {
+    if (this._freeList.length) return this._freeList.pop()
+    return this._counter++
+  }
+  delete (id) {
+    this._freeList.push(id)
+  }
+}
+
 module.exports = class RemoteCorestore extends Nanoresource {
   constructor (opts = {}) {
     super()
     this._client = opts.client
     this._name = opts.name
-    this._sessions = []
+    this._sessions = opts.sessions || new Sessions()
   }
 
   _open () {
@@ -30,23 +44,24 @@ module.exports = class RemoteCorestore extends Nanoresource {
   }
 
   default (opts = {}) {
-    return new RemoteHypercore(this._client, this._name, 0, opts)
+    return this.get(null, { name: this._name })
   }
 
   get (key, opts = {}) {
-    return new RemoteHypercore(this._client, this._name, 0, key, opts)
+    return new RemoteHypercore(this._client, this._sessions, key, opts)
   }
 
   namespace (name) {
     return new this.constructor({
       client: this._client,
-      name
+      sessions: this._sessions,
+      name,
     })
   }
 }
 
 class RemoteHypercore extends Nanoresource {
-  constructor (client, name, id, key, opts) {
+  constructor (client, sessions, key, opts) {
     super()
     this.key = key
     this.discoveryKey = null
@@ -55,8 +70,9 @@ class RemoteHypercore extends Nanoresource {
     this.writable = false
 
     this._client = client
-    this._name = name
-    this._id = id
+    this._sessions = sessions
+    this._name = opts.name
+    this._id = this._sessions.create()
 
     this.ready(() => {})
   }
@@ -85,6 +101,12 @@ class RemoteHypercore extends Nanoresource {
     this.length = rsp.length
     this.byteLength = rsp.byteLength
     this.emit('ready')
+  }
+
+  async _close () {
+    await this._client.close({ id: this._id })
+    this._sessions.delete(this._id)
+    this.emit('close')
   }
 
   async _append (blocks) {

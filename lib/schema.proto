@@ -13,7 +13,7 @@ message HypercoreOptions {}
 message OpenRequest {
   uint32 id = 1;
   bytes key = 2;
-  string namespace = 3;
+  string name = 3;
   HypercoreOptions opts = 4;
 }
 message OpenResponse {

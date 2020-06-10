@@ -10,6 +10,7 @@ module.exports = class Hyperspace extends Nanoresource {
     this.corestore = new Corestore(opts.storage || './storage')
     // Set in _open
     this.server = null
+    this._references = new Map()
   }
 
   // Nanoresource Methods
@@ -30,15 +31,42 @@ module.exports = class Hyperspace extends Nanoresource {
 
   // Private Methods
 
+  _incrementCore (core) {
+    let oldCount = this._references.get(core) || 0
+    this._references.set(core, oldCount + 1)
+  }
+
+  _decrementCore (core) {
+    let currentCount = this._references.get(core)
+    this._references.set(core, currentCount - 1)
+    if (currentCount - 1) return Promise.resolve()
+    this._references.delete(core)
+    return new Promise((resolve, reject) => {
+      core.close(err => {
+        if (err) return reject(err)
+        return resolve(null)
+      })
+    })
+  }
+
   _onConnection (client) {
-    console.log('got a new connection')
     const sessions = new Map()
+    client.on('close', () => {
+      for (const core of sessions.values()) {
+        this._decrementCore(core).catch(err => {
+          this.emit('error', err)
+        })
+      }
+    })
     client.onRequest(this, {
       async open ({ id, key, name, opts }) {
         let core = sessions.get(id)
         if (core) throw new Error('Should not reuse session IDs')
-        core = this.corestore.get({ key, _name: name, ...opts })
+
+        core = this.corestore.get({ key, _name: name, default: !!name, ...opts })
         sessions.set(id, core)
+        this._incrementCore(core)
+
         // TODO: Delete session if ready fails.
         await new Promise((resolve, reject) => {
           core.ready(err => {
@@ -54,7 +82,10 @@ module.exports = class Hyperspace extends Nanoresource {
         }
       },
       async close ({ id }) {
-        console.log('close')
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        sessions.delete(id)
+        await this._decrementCore(core)
       },
       async get ({ id, seq, wait, ifAvailable }) {
         const core = sessions.get(id)
