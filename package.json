@@ -36,6 +36,7 @@
   "devDependencies": {
     "hyperdrive": "^10.12.2",
     "protocol-buffers": "^4.1.2",
+    "random-access-memory": "^3.1.1",
     "tape": "^5.0.1",
     "tmp-promise": "^3.0.2"
   }

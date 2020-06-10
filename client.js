@@ -1,4 +1,5 @@
 const maybe = require('call-me-maybe')
+const codecs = require('codecs')
 const hypercoreCrypto = require('hypercore-crypto')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
@@ -119,11 +120,13 @@ class RemoteHypercore extends Nanoresource {
     return rsp.seq
   }
 
-  async _get (seq) {
+  async _get (seq, opts) {
     const rsp = await this._client.get({
-      id: this._id,
-      seq
+      ...opts,
+      seq,
+      id: this._id
     })
+    if (opts && opts.valueEncoding) return codecs(opts.valueEncoding).decode(rsp.block)
     return rsp.block
   }
 
@@ -161,8 +164,12 @@ class RemoteHypercore extends Nanoresource {
     return maybe(cb, this._append(blocks))
   }
 
-  get (seq, cb) {
-    return maybe(cb, this._get(seq))
+  get (seq, opts, cb) {
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = null
+    }
+    return maybe(cb, this._get(seq, opts))
   }
 
   update (opts, cb) {

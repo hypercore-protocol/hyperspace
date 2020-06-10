@@ -168,6 +168,31 @@ test('corestore default get works', async t => {
 test('can run a hypertrie on remote hypercore', async t => {
   const { server, store, cleanup } = await create()
 
+  const core = store.default()
+  await core.ready()
+
+  const trie = hypertrie(null, null, {
+    feed: core,
+    extension: false,
+    valueEncoding: 'utf8'
+  })
+  await new Promise(resolve => {
+    console.log(1)
+    trie.ready(err => {
+      t.error(err, 'no error')
+      trie.put('/hello', 'world', err => {
+        console.log(2)
+        t.error(err, 'no error')
+        trie.get('/hello', (err, node) => {
+          console.log(3)
+          t.error(err, 'no error')
+          t.same(node.value, 'world')
+          return resolve()
+        })
+      })
+    })
+  })
+
   await cleanup()
   t.end()
 })
