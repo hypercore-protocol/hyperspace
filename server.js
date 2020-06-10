@@ -35,7 +35,6 @@ module.exports = class Hyperspace extends Nanoresource {
     const sessions = new Map()
     client.onRequest(this, {
       async open ({ id, key, opts }) {
-        console.log('in open')
         let core = sessions.get(id)
         if (core) throw new Error('Should not reuse session IDs')
         core = this.corestore.get({ key, ...opts })
@@ -57,8 +56,30 @@ module.exports = class Hyperspace extends Nanoresource {
       async close ({ id }) {
         console.log('close')
       },
-      async get ({ id, seq }) {
-        console.log('get')
+      async get ({ id, seq, wait, ifAvailable }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcGet(core, seq, { ifAvailable, wait })
+      },
+      async append ({ id, blocks }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcAppend(core, blocks)
+      },
+      async update ({ id, ifAvailable, minLength }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcUpdate(core, { ifAvailable, minLength })
+      },
+      async seek ({ id, byteOffset, start, end, wait, ifAvailable }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcSeek(core, byteOffset, { start, end, wait, ifAvailable })
+      },
+      async has ({ id, seq }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcHas(core, seq)
       }
     })
   }
@@ -69,21 +90,61 @@ module.exports = class Hyperspace extends Nanoresource {
   }
 
   async _stopListening () {
-    // TODO: Stop listening
+    return this.server.close()
   }
 
   // RPC Methods
 
-  _rpcOpen (req) {
-    const keyString = keyToString(req.key)
+  _rpcGet (core, seq, opts) {
+    return new Promise((resolve, reject) => {
+      core.get(seq, opts, (err, block) => {
+        if (err) return reject(err)
+        return resolve({ block })
+      })
+    })
   }
 
-  _rpcClose (req) {
+  _rpcAppend (core, blocks) {
+    return new Promise((resolve, reject) => {
+      core.append(blocks, (err, seq) => {
+        if (err) return reject(err)
+        return resolve({
+          length: core.length,
+          byteLength: core.byteLength,
+          seq
+        })
+      })
+    })
+  }
+
+  _rpcUpdate (core, opts) {
+    return new Promise((resolve, reject) => {
+      core.update(opts, (err, block) => {
+        if (err) return reject(err)
+        return resolve({ block })
+      })
+    })
+  }
+
+  _rpcSeek (core, byteOffset, opts) {
+    return new Promise((resolve, reject) => {
+      core.seek(byteOffset, opts, (err, seq, blockOffset) => {
+        if (err) return reject(err)
+        return resolve({ seq, blockOffset })
+      })
+    })
 
   }
 
-  _rpcGet (req) {
-
+  _rpcHas (core, seq) {
+    return new Promise((resolve, reject) => {
+      core.ready(err => {
+        if (err) return reject(err)
+        return resolve({
+          has: core.has(seq)
+        })
+      })
+    })
   }
 
   // Public Methods

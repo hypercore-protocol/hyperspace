@@ -8,6 +8,8 @@ message Error {
 
 message HypercoreOptions {}
 
+// Top-level Methods
+
 message OpenRequest {
   uint32 id = 1;
   bytes key = 2;
@@ -23,11 +25,14 @@ message OpenResponse {
 message CloseRequest {
   uint32 id = 1;
 }
-message CloseResponse {}
+
+// Hypercore Methods
 
 message GetRequest {
   uint32 id = 1;
   uint64 seq = 2;
+  bool wait = 3;
+  bool ifAvailable = 4;
 }
 message GetResponse {
   bytes block = 1;
@@ -40,6 +45,27 @@ message AppendRequest {
 message AppendResponse {
   uint64 length = 1;
   uint64 byteLength = 2;
+  uint64 seq = 3;
+}
+
+message UpdateRequest {
+  uint32 id = 1;
+  uint64 minLength = 2;
+  bool ifAvailable = 3;
+}
+
+message SeekRequest {
+  uint32 id = 1;
+  uint64 byteOffset = 2;
+  uint64 start = 3;
+  uint64 end = 4;
+  bool wait = 5;
+  bool ifAvailable = 6;
+}
+
+message SeekResponse {
+  uint64 seq = 1;
+  uint64 blockOffset = 2;
 }
 
 message HasRequest {
@@ -48,4 +74,11 @@ message HasRequest {
 }
 message HasResponse {
   bool has = 1;
+}
+
+// Events
+
+message AppendEvent {
+  uint64 length = 1;
+  uint64 byteLength = 2;
 }

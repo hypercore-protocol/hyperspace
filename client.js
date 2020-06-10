@@ -43,6 +43,17 @@ class RemoteHypercore extends Nanoresource {
     this.ready(() => {})
   }
 
+  ready (cb) {
+    return maybe(cb, this.open())
+  }
+
+  // Events
+  _onappend (rsp) {
+    this.length = rsp.length
+    this.byteLength = rsp.byteLength
+    this.emit('append')
+  }
+
   async _open () {
     const rsp = await this._client.open({
       id: this._id,
@@ -57,18 +68,14 @@ class RemoteHypercore extends Nanoresource {
     this.emit('ready')
   }
 
-  ready (cb) {
-    return maybe(cb, this.open())
-  }
-
   async _append (blocks) {
     if (Buffer.isBuffer(blocks)) blocks = [blocks]
     const rsp = await this._client.append({
       id: this._id,
-      blocks: blocks
+      blocks
     })
-    this.length = rsp.length
-    this.byteLength = rsp.byteLength
+    this._onappend(rsp)
+    return rsp.seq
   }
 
   async _get (seq) {
@@ -79,11 +86,61 @@ class RemoteHypercore extends Nanoresource {
     return rsp.block
   }
 
+  async _update (opts) {
+    await this.ready()
+    if (typeof opts === 'number') opts = { minLength: opts }
+    if (typeof opts.minLength !== 'number') opts.minLength = this.length + 1
+    return this._client.update({
+      ...opts,
+      id: this._id
+    })
+  }
+
+  async _seek (byteOffset, opts) {
+    const rsp = await this._client.seek({
+      byteOffset,
+      ...opts,
+      id: this._id
+    })
+    return {
+      seq: rsp.seq,
+      blockOffset: rsp.blockOffset
+    }
+  }
+
+  async _has (seq) {
+    const rsp = await this._client.has({
+      seq,
+      id: this._id
+    })
+    return rsp.has
+  }
+
   append (blocks, cb) {
     return maybe(cb, this._append(blocks))
   }
 
   get (seq, cb) {
     return maybe(cb, this._get(seq))
+  }
+
+  update (opts, cb) {
+    return maybe(cb, this._update(opts))
+  }
+
+  seek (byteOffset, opts, cb) {
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = null
+    }
+    const seekProm = this._seek(byteOffset, opts)
+    if (!cb) return seekProm
+    seekProm
+      .then(({ seq, blockOffset }) => process.nextTick(cb, null, seq, blockOffset))
+      .catch(err => process.nextTick(cb, err))
+  }
+
+  has (seq, cb) {
+    return maybe(cb, this._has(seq))
   }
 }
