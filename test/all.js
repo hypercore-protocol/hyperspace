@@ -1,6 +1,7 @@
 const test = require('tape')
 const tmp = require('tmp-promise')
 const hypertrie = require('hypertrie')
+const hyperdrive = require('hyperdrive')
 const RemoteCorestore = require('../client')
 const HyperspaceServer = require('../server')
 
@@ -187,6 +188,31 @@ test('can run a hypertrie on remote hypercore', async t => {
           console.log(3)
           t.error(err, 'no error')
           t.same(node.value, 'world')
+          return resolve()
+        })
+      })
+    })
+  })
+
+  await cleanup()
+  t.end()
+})
+
+test.only('can run a hyperdrive on a remote hypercore', async t => {
+  const { server, store, cleanup } = await create()
+
+  const drive = hyperdrive(store, null, {
+    extension: false,
+    valueEncoding: 'utf8'
+  })
+  await new Promise(resolve => {
+    drive.ready(err => {
+      t.error(err, 'no error')
+      drive.writeFile('/hello', 'world', err => {
+        t.error(err, 'no error')
+        drive.readFile('/hello', { encoding: 'utf8' }, (err, contents) => {
+          t.error(err, 'no error')
+          t.same(contents, 'world')
           return resolve()
         })
       })
