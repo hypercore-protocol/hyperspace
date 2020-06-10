@@ -138,7 +138,7 @@ test('has works correctly', async t => {
   t.end()
 })
 
-test.only('download works correctly', async t => {
+test('download works correctly', async t => {
   const { server, store, cleanup } = await create()
 
   const core = store.get()

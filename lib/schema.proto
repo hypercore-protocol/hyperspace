@@ -1,7 +1,7 @@
 syntax = "proto2";
 
 message RPCError {
-  optional int32 code = 1;
+  // optional int32 code = 1; there is a protobuf bug here. @mafintosh: fix me
   required string message = 2;
   optional string details = 3;
 }
@@ -32,7 +32,7 @@ message CloseRequest {
 message GetRequest {
   required uint32 id = 1;
   required uint64 seq = 2;
-  optional bool wait = 3;
+  optional bool wait = 3 [default = true];
   optional bool ifAvailable = 4;
 }
 message GetResponse {
@@ -61,7 +61,7 @@ message SeekRequest {
   required uint64 byteOffset = 2;
   optional uint64 start = 3;
   optional uint64 end = 4;
-  optional bool wait = 5;
+  optional bool wait = 5 [default = true];
   optional bool ifAvailable = 6;
 }
 message SeekResponse {
