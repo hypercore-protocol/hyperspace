@@ -9,13 +9,19 @@ class Sessions {
   constructor () {
     this._counter = 0
     this._freeList = []
+    this._remoteCores = new Map()
   }
-  create () {
-    if (this._freeList.length) return this._freeList.pop()
-    return this._counter++
+  create (remoteCore) {
+    const id = this._freeList.length ? this._freeList.pop() : this._counter++
+    this._remoteCores.set(id, remoteCore)
+    return id
   }
   delete (id) {
+    this._remoteCores.delete(id)
     this._freeList.push(id)
+  }
+  get (id) {
+    return this._remoteCores.get(id)
   }
 }
 
@@ -28,7 +34,15 @@ module.exports = class RemoteCorestore extends Nanoresource {
   }
 
   _open () {
-    if (!this._client) this._client = new RPCClient()
+    if (this._client) return
+    this._client = new RPCClient()
+    this._client.onRequest(this, {
+      onappend ({ id, length, byteLength}) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onappend({ length, byteLength })
+      }
+    })
   }
 
   _close () {
@@ -73,7 +87,7 @@ class RemoteHypercore extends Nanoresource {
     this._client = client
     this._sessions = sessions
     this._name = opts.name
-    this._id = this._sessions.create()
+    this._id = this._sessions.create(this)
 
     this.ready(() => {})
   }
@@ -116,7 +130,6 @@ class RemoteHypercore extends Nanoresource {
       id: this._id,
       blocks
     })
-    this._onappend(rsp)
     return rsp.seq
   }
 

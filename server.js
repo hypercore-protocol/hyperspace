@@ -51,11 +51,15 @@ module.exports = class Hyperspace extends Nanoresource {
 
   _onConnection (client) {
     const sessions = new Map()
+    const unlistensBySession = new Map()
     client.on('close', () => {
       for (const core of sessions.values()) {
         this._decrementCore(core).catch(err => {
           this.emit('error', err)
         })
+      }
+      for (const unlistens of unlistensBySession.values()) {
+        for (const unlisten of unlistens) unlisten()
       }
     })
     client.onRequest(this, {
@@ -74,6 +78,22 @@ module.exports = class Hyperspace extends Nanoresource {
             return resolve()
           })
         })
+
+        const appendListener = () => {
+          client.onappend({
+            id,
+            length: core.length,
+            byteLength: core.byteLength
+          })
+        }
+        core.on('append', appendListener)
+        let unlistens = unlistensBySession.get(id)
+        if (!unlistens) {
+          unlistens = []
+          unlistensBySession.set(id, unlistens)
+        }
+        unlistens.push(() => core.removeListener('append', appendListener))
+
         return {
           key: core.key,
           length: core.length,
@@ -81,32 +101,43 @@ module.exports = class Hyperspace extends Nanoresource {
           writable: core.writable
         }
       },
+
       async close ({ id }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
+        let unlistens = unlistensBySession.get(id)
+        if (unlistens) {
+          for (const unlisten of unlistens) unlisten()
+        }
+        unlistensBySession.delete(id)
         sessions.delete(id)
         await this._decrementCore(core)
       },
+
       async get ({ id, seq, wait, ifAvailable }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
         return this._rpcGet(core, seq, { ifAvailable, wait })
       },
+
       async append ({ id, blocks }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
         return this._rpcAppend(core, blocks)
       },
+
       async update ({ id, ifAvailable, minLength, hash }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
         return this._rpcUpdate(core, { ifAvailable, minLength, hash })
       },
+
       async seek ({ id, byteOffset, start, end, wait, ifAvailable }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
         return this._rpcSeek(core, byteOffset, { start, end, wait, ifAvailable })
       },
+
       async has ({ id, seq }) {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')

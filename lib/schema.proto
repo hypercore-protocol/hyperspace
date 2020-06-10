@@ -81,6 +81,7 @@ message HasResponse {
 // Events
 
 message AppendEvent {
-  required uint64 length = 1;
-  required uint64 byteLength = 2;
+  required uint64 id = 1;
+  required uint64 length = 2;
+  required uint64 byteLength = 3;
 }
