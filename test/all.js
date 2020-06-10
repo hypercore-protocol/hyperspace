@@ -138,6 +138,29 @@ test('has works correctly', async t => {
   t.end()
 })
 
+test.only('download works correctly', async t => {
+  const { server, store, cleanup } = await create()
+
+  const core = store.get()
+  await core.ready()
+
+  const buf = Buffer.from('hello world', 'utf8')
+  let seq = await core.append(buf)
+
+  const prom = core.download({ start: 0, end: 10 })
+  await core.undownload(prom)
+
+  try {
+    await prom
+  } catch (err) {
+    t.same(err.message, 'Download was cancelled')
+  }
+
+  await core.close()
+  await cleanup()
+  t.end()
+})
+
 test('corestore default get works', async t => {
   const { server, store, cleanup } = await create()
 
@@ -178,14 +201,11 @@ test('can run a hypertrie on remote hypercore', async t => {
     valueEncoding: 'utf8'
   })
   await new Promise(resolve => {
-    console.log(1)
     trie.ready(err => {
       t.error(err, 'no error')
       trie.put('/hello', 'world', err => {
-        console.log(2)
         t.error(err, 'no error')
         trie.get('/hello', (err, node) => {
-          console.log(3)
           t.error(err, 'no error')
           t.same(node.value, 'world')
           return resolve()

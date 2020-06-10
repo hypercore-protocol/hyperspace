@@ -52,6 +52,8 @@ module.exports = class Hyperspace extends Nanoresource {
   _onConnection (client) {
     const sessions = new Map()
     const unlistensBySession = new Map()
+    const resources = new Map()
+
     client.on('close', () => {
       for (const core of sessions.values()) {
         this._decrementCore(core).catch(err => {
@@ -142,6 +144,18 @@ module.exports = class Hyperspace extends Nanoresource {
         const core = sessions.get(id)
         if (!core) throw new Error('Invalid session.')
         return this._rpcHas(core, seq)
+      },
+
+      async download ({ id, resourceId, start, end, blocks, linear }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcDownload(core, resources, resourceId, { start, end, blocks: blocks.length ? blocks : null, linear})
+      },
+
+      async undownload ({ id, resourceId }) {
+        const core = sessions.get(id)
+        if (!core) throw new Error('Invalid session.')
+        return this._rpcUndownload(core, resources, resourceId)
       }
     })
   }
@@ -164,6 +178,28 @@ module.exports = class Hyperspace extends Nanoresource {
         return resolve({ block })
       })
     })
+  }
+
+  _rpcDownload (core, resources, resourceId, opts) {
+    return new Promise((resolve, reject) => {
+      if (resources.has(resourceId)) throw new Error('Invalid resource id.')
+      let downloaded = false
+      const d = core.download(opts, (err) => {
+        downloaded = true
+        resources.delete(resourceId)
+        if (err) return reject(err)
+        return resolve()
+      })
+      if (downloaded) return
+      resources.set(resourceId, d)
+    })
+  }
+
+  _rpcUndownload (core, resources, resourceId) {
+    const r = resources.get(resourceId)
+    if (!r) throw new Error('Invalid resource id.')
+    resources.delete(resourceId)
+    core.undownload(r)
   }
 
   _rpcAppend (core, blocks) {

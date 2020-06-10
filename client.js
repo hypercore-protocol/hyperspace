@@ -88,6 +88,7 @@ class RemoteHypercore extends Nanoresource {
     this._sessions = sessions
     this._name = opts.name
     this._id = this._sessions.create(this)
+    this._resourceId = 0
 
     this.ready(() => {})
   }
@@ -205,14 +206,44 @@ class RemoteHypercore extends Nanoresource {
     return maybe(cb, this._has(seq))
   }
 
+  download (range, cb) {
+    if (typeof range === 'number') range = { start: range, end: range + 1}
+    if (Array.isArray(range)) range = { blocks: range }
+
+    // much easier to run this in the client due to pbuf defaults
+    if (range.blocks && typeof range.start !== 'number') {
+      let min = -1
+      let max = 0
+
+      for (let i = 0; i < range.blocks.length; i++) {
+        const blk = range.blocks[i]
+        if (min === -1 || blk < min) min = blk
+        if (blk >= max) max = blk + 1
+      }
+
+      range.start = min === -1 ? 0 : min
+      range.end = max
+    }
+    if (range.end === -1) range.end = 0 // means the same
+
+    const resourceId = this._resourceId++
+
+    const prom = this._client.download({ ...range, id: this._id, resourceId })
+    prom.catch(noop) // optional promise due to the hypercore signature
+    prom.resourceId = resourceId
+
+    maybe(cb, prom)
+    return prom // always return prom as that one is the "cancel" token
+  }
+
+  undownload (dl, cb) {
+    if (typeof dl.resourceId !== 'number') throw new Error('Must pass a download return value')
+    const prom = this._client.undownload({ id: this._id, resourceId: dl.resourceId })
+    prom.catch(noop) // optional promise due to the hypercore signature
+    return maybe(cb, prom)
+  }
+
   // TODO: Unimplemented methods
-
-  download () {
-    return {}
-  }
-
-  undownload () {
-  }
 
   registerExtension () {
   }
@@ -221,3 +252,5 @@ class RemoteHypercore extends Nanoresource {
     throw new Error('Cannot call replicate on a RemoteHyperdrive')
   }
 }
+
+function noop () {}

@@ -1,7 +1,7 @@
 syntax = "proto2";
 
-message Error {
-  required int32 code = 1;
+message RPCError {
+  optional int32 code = 1;
   required string message = 2;
   optional string details = 3;
 }
@@ -53,7 +53,7 @@ message UpdateRequest {
   required uint32 id = 1;
   optional uint64 minLength = 2;
   optional bool ifAvailable = 3;
-  optional bool hash = 4 [default = true]; 
+  optional bool hash = 4 [default = true];
 }
 
 message SeekRequest {
@@ -64,7 +64,6 @@ message SeekRequest {
   optional bool wait = 5;
   optional bool ifAvailable = 6;
 }
-
 message SeekResponse {
   required uint64 seq = 1;
   required uint64 blockOffset = 2;
@@ -76,6 +75,20 @@ message HasRequest {
 }
 message HasResponse {
   required bool has = 1;
+}
+
+message DownloadRequest {
+  required uint64 id = 1;
+  required uint64 resourceId = 2;
+  optional uint64 start = 3;
+  optional uint64 end = 4;
+  repeated uint64 blocks = 5;
+  optional bool linear = 6;
+}
+
+message UndownloadRequest {
+  required uint64 id = 1;
+  required uint64 resourceId = 2;
 }
 
 // Events
