@@ -1,6 +1,7 @@
 const maybe = require('call-me-maybe')
 const codecs = require('codecs')
 const hypercoreCrypto = require('hypercore-crypto')
+const { WriteStream, ReadStream } = require('hypercore-streams')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const { Client: RPCClient } = require('./lib/rpc')
@@ -204,6 +205,14 @@ class RemoteHypercore extends Nanoresource {
 
   has (seq, cb) {
     return maybe(cb, this._has(seq))
+  }
+
+  createReadStream (opts) {
+    return new ReadStream(this, opts)
+  }
+
+  createWriteStream (opts) {
+    return new WriteStream(this, opts)
   }
 
   download (range, cb) {
