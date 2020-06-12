@@ -51,6 +51,10 @@ message GetNetworkConfigurationResponse {
   optional NetworkConfiguration configuration = 1;
 }
 
+message GetAllNetworkConfigurationsResponse {
+  repeated NetworkConfiguration configurations = 1;
+}
+
 // Hypercore Methods
 
 message CloseRequest {
@@ -168,6 +172,7 @@ service Network {
    // Methods
   rpc ConfigureNetwork (ConfigureNetworkRequest) returns (Void);
   rpc GetNetworkConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
+  rpc GetAllNetworkConfigurations (Void) returns (GetAllNetworkConfigurationsResponse);
 
   // Events
 }

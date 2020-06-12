@@ -73,12 +73,82 @@ test('peers are set on a remote hypercore', async t => {
           core.removeListener('peer-open', openedListener)
           return resolve()
         }
+        return null
       }
       core.on('peer-open', openedListener)
     })
     await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
     await peerAddProm
   }
+
+  await cleanup()
+  t.end()
+})
+
+test('can get a stored network configuration', async t => {
+  // TODO: Figure out DHT error when doing a swarm join with bootstrap: false
+  const { stores, servers, cleanup } = await createMany(1)
+  const store = stores[0]
+
+  const core = store.get()
+  await core.ready()
+  await store.configureNetwork(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
+
+  const config = await store.getNetworkConfiguration(core.discoveryKey)
+  t.true(config.discoveryKey.equals(core.discoveryKey))
+  t.true(config.announce)
+  t.true(config.lookup)
+
+  await cleanup()
+  t.end()
+})
+
+test('can get a transient network configuration', async t => {
+  const { stores, servers, cleanup } = await createMany(1)
+  const store = stores[0]
+
+  const core = store.get()
+  await core.ready()
+  await store.configureNetwork(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
+
+  const config = await store.getNetworkConfiguration(core.discoveryKey)
+  t.true(config.discoveryKey.equals(core.discoveryKey))
+  t.false(config.announce)
+  t.true(config.lookup)
+
+  await cleanup()
+  t.end()
+})
+
+test('can get all network configurations', async t => {
+  const { stores, servers, cleanup } = await createMany(1)
+  const store = stores[0]
+
+  const core1 = store.get()
+  const core2 = store.get()
+  const core3 = store.get()
+  await core1.ready()
+  await core2.ready()
+  await core3.ready()
+
+  await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
+  await store.configureNetwork(core2.discoveryKey, { announce: false, lookup: true, flush: true, remember: true })
+  await store.configureNetwork(core3.discoveryKey, { announce: true, lookup: true, flush: true, remember: false })
+
+  const configs = await store.getAllNetworkConfigurations()
+  t.same(configs.length, 3)
+  let remembers = 0
+  let announces = 0
+  let lookups = 0
+  for (let config of configs) {
+    if (config.remember) remembers++
+    if (config.announce) announces++
+    if (config.lookup) lookups++
+  }
+
+  t.same(lookups, 3)
+  t.same(announces, 1)
+  t.same(remembers, 1)
 
   await cleanup()
   t.end()

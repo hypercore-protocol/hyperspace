@@ -119,6 +119,7 @@ module.exports = class RemoteCorestore extends Nanoresource {
   }
 
   // Networking Methods
+
   configureNetwork (discoveryKey, opts = {}) {
     return this._client.network.configureNetwork({
       configuration: {
@@ -129,6 +130,18 @@ module.exports = class RemoteCorestore extends Nanoresource {
       },
       flush: opts.flush
     })
+  }
+
+  async getNetworkConfiguration (discoveryKey) {
+    const rsp = await this._client.network.getNetworkConfiguration({
+      discoveryKey
+    })
+    return rsp.configuration
+  }
+
+  async getAllNetworkConfigurations () {
+    const rsp = await this._client.network.getAllNetworkConfigurations()
+    return rsp.configurations
   }
 }
 
