@@ -2,14 +2,17 @@ const Corestore = require('corestore')
 const Networker = require('corestore-swarm-networking')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
-const { Server: RPCServer } = require('./lib/rpc')
+const HRPC = require('./lib/rpc')
+
+const SOCK = '/tmp/hyperspace.sock'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
     this.corestore = new Corestore(opts.storage || './storage')
-    // Set in _open
-    this.server = null
+
+    this._sock = opts.host || SOCK
+    this.server = HRPC.createServer(this._onConnection.bind(this))
     this._references = new Map()
   }
 
@@ -82,7 +85,7 @@ module.exports = class Hyperspace extends Nanoresource {
         })
 
         const appendListener = () => {
-          client.onappend({
+          client.onAppend({
             id,
             length: core.length,
             byteLength: core.byteLength
@@ -161,8 +164,7 @@ module.exports = class Hyperspace extends Nanoresource {
   }
 
   async _startListening () {
-    this.server = new RPCServer(this._onConnection.bind(this))
-    return this.server.listen()
+    return this.server.listen(this._sock)
   }
 
   async _stopListening () {

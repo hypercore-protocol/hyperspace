@@ -34,7 +34,7 @@ test('can get a block', async t => {
   t.end()
 })
 
-test('length/byteLength update correctly on append', async t => {
+test.only('length/byteLength update correctly on append', async t => {
   const { server, store, cleanup } = await create()
 
   const core = store.get()
@@ -218,7 +218,7 @@ test('can run a hypertrie on remote hypercore', async t => {
   t.end()
 })
 
-test.skip('can run a hyperdrive on a remote hypercore', async t => {
+test('can run a hyperdrive on a remote hypercore', async t => {
   const { server, store, cleanup } = await create()
 
   const drive = hyperdrive(store, null, {

@@ -4,7 +4,9 @@ const hypercoreCrypto = require('hypercore-crypto')
 const { WriteStream, ReadStream } = require('hypercore-streams')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
-const { Client: RPCClient } = require('./lib/rpc')
+const HRPC = require('./lib/rpc')
+
+const SOCK = '/tmp/hyperspace.sock'
 
 class Sessions {
   constructor () {
@@ -31,14 +33,15 @@ module.exports = class RemoteCorestore extends Nanoresource {
     super()
     this._client = opts.client
     this._name = opts.name
+    this._sock = opts.host || SOCK
     this._sessions = opts.sessions || new Sessions()
   }
 
   _open () {
     if (this._client) return
-    this._client = new RPCClient()
+    this._client = HRPC.connect(this._sock)
     this._client.onRequest(this, {
-      onappend ({ id, length, byteLength}) {
+      onAppend ({ id, length, byteLength}) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onappend({ length, byteLength })

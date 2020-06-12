@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "tape test/*.js",
-    "build": "protocol-buffers lib/schema.proto -o lib/messages.js"
+    "build": "hrpc lib/schema.proto --service=Hyperspace --rpc=lib/rpc.js --messages=lib/messages.js"
   },
   "repository": {
     "type": "git",
@@ -26,16 +26,16 @@
   },
   "homepage": "https://github.com/andrewosh/hyperspace#readme",
   "dependencies": {
-    "arpeecee": "^1.0.2",
     "corestore": "^5.5.0",
     "corestore-swarm-networking": "^5.5.1",
+    "hrpc-runtime": "^1.0.0",
     "hypercore-streams": "^1.0.0",
     "hypertrie": "^5.0.2",
-    "nanoresource-promise": "^1.2.2",
-    "protocol-buffers-encodings": "^1.1.0"
+    "nanoresource-promise": "^1.2.2"
   },
   "devDependencies": {
     "compare": "^2.0.0",
+    "hrpc": "^1.2.1",
     "hyperdrive": "git+https://github.com/hypercore-protocol/hyperdrive#remote-hypercore-testing",
     "protocol-buffers": "^4.1.2",
     "random-access-memory": "^3.1.1",

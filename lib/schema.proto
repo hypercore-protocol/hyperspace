@@ -1,11 +1,5 @@
 syntax = "proto2";
 
-message RPCError {
-  // optional int32 code = 1; there is a protobuf bug here. @mafintosh: fix me
-  required string message = 2;
-  optional string details = 3;
-}
-
 message HypercoreOptions {}
 
 // Top-level Methods
@@ -97,4 +91,23 @@ message AppendEvent {
   required uint64 id = 1;
   required uint64 length = 2;
   required uint64 byteLength = 3;
+}
+
+// TODO: Before official release, tag these methods with explicit IDs
+service Hyperspace {
+  // Corestore Methods
+  rpc Open (OpenRequest) returns (OpenResponse);
+
+  // Hypercore Methods
+  rpc Get (GetRequest) returns (GetResponse);
+  rpc Append (AppendRequest) returns (AppendResponse);
+  rpc Update (UpdateRequest) returns (Void);
+  rpc Seek (SeekRequest) returns (SeekResponse);
+  rpc Has (HasRequest) returns (HasResponse);
+  rpc Download (DownloadRequest) returns (Void);
+  rpc Undownload (UndownloadRequest) returns (Void);
+  rpc Close (CloseRequest) returns (Void);
+
+  // Hypercore Events
+  rpc OnAppend (AppendEvent) returns (Void);
 }
