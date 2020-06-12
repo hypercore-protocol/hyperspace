@@ -162,6 +162,20 @@ test('download works correctly', async t => {
   t.end()
 })
 
+test('valueEncodings work', async t => {
+  const { server, store, cleanup } = await createOne()
+
+  const core = store.get({ valueEncoding: 'utf8' })
+  await core.ready()
+
+  await core.append('hello world')
+  const block = await core.get(0)
+  t.same(block, 'hello world')
+
+  await cleanup()
+  t.end()
+})
+
 test('corestore default get works', async t => {
   const { server, store, cleanup } = await createOne()
 

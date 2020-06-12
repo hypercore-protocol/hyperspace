@@ -237,7 +237,7 @@ class RemoteHypercore extends Nanoresource {
   // Private Methods
 
   async _append (blocks) {
-    if (Buffer.isBuffer(blocks)) blocks = [blocks]
+    if (!Array.isArray(blocks)) blocks = [blocks]
     if (this.valueEncoding) blocks = blocks.map(b => this.valueEncoding.encode(b))
     const rsp = await this._client.hypercore.append({
       id: this._id,
