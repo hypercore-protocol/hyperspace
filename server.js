@@ -85,7 +85,7 @@ module.exports = class Hyperspace extends Nanoresource {
         })
 
         const appendListener = () => {
-          client.onAppend({
+          client.onAppendNoReply({
             id,
             length: core.length,
             byteLength: core.byteLength

@@ -34,7 +34,7 @@ test('can get a block', async t => {
   t.end()
 })
 
-test.only('length/byteLength update correctly on append', async t => {
+test('length/byteLength update correctly on append', async t => {
   const { server, store, cleanup } = await create()
 
   const core = store.get()
