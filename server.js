@@ -11,6 +11,7 @@ const SessionState = require('./lib/session-state')
 
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
+const NetworkSession = require('./lib/sessions/network')
 
 const SOCK = '/tmp/hyperspace.sock'
 
@@ -140,44 +141,7 @@ module.exports = class Hyperspace extends Nanoresource {
 
     client.corestore.onRequest(new CorestoreSession(client, sessionState, this.corestore))
     client.hypercore.onRequest(new HypercoreSession(client, sessionState))
-
-    client.hyperspace.onRequest(this, {
-      // Hypercore Methods
-
-
-      // Networking Methods
-      async configureNetwork ({ configuration: { discoveryKey, announce, lookup, remember }, flush }) {
-        if (discoveryKey.length !== 32) throw new Error('Invalid discovery key.')
-        const dkeyString = discoveryKey.toString('hex')
-
-        const join = announce || lookup
-        var networkProm = null
-        if (join) networkProm = this.networker.join(discoveryKey, { announce, lookup })
-        else networkProm = this.networker.leave(discoveryKey)
-
-        const networkConfiguration = { discoveryKey, announce, lookup, remember }
-        if (remember) {
-          await this.db.putNetworkConfiguration(networkConfiguration)
-        } else {
-          if (join) this._transientNetworkConfigurations.set(dkeyString, networkConfiguration)
-          else this._transientNetworkConfigurations.delete(dkeyString)
-        }
-
-        if (flush) {
-          return networkProm
-        }
-        networkProm.catch(err => this.emit('swarm-error', err))
-      },
-
-      async getNetworkConfiguration ({ discoveryKey }) {
-        const dkeyString = discoveryKey.toString('hex')
-        if (this._transientNetworkConfigurations.has(dkeyString)) {
-          return this._transientNetworkConfigurations.get(dkeyString)
-        }
-        const configuration = await this.db.getNetworkConfiguration(dkeyString)
-        return configuration || {}
-      }
-    })
+    client.network.onRequest(new NetworkSession(client, sessionState, this.networker, this.db, this._transientNetworkConfigurations))
   }
 }
 
