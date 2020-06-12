@@ -13,7 +13,9 @@ const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
 
-const SOCK = process.env['NODE_ENV'] === 'test' ? './hyperspace.sock' : '/tmp/hyperspace.sock'
+const os = require('os')
+const p = require('path')
+const SOCK = process.env['NODE_ENV'] === 'test' ? p.join(os.homedir(), './hyperspace.sock') : '/tmp/hyperspace.sock'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
