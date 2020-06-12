@@ -227,16 +227,13 @@ test('can run a hyperdrive on a remote hypercore', async t => {
     valueEncoding: 'utf8'
   })
   await new Promise(resolve => {
-    console.log('before drive ready')
     drive.ready(err => {
       t.error(err, 'no error')
-      console.log('drive ready')
       drive.writeFile('/hello', 'world', err => {
         t.error(err, 'no error')
         drive.readFile('/hello', { encoding: 'utf8' }, (err, contents) => {
           t.error(err, 'no error')
           t.same(contents, 'world')
-          console.log('here at resolve')
           return resolve()
         })
       })

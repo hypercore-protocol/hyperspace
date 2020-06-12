@@ -5,16 +5,16 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 
 const HRPC = require('./lib/rpc')
 const messages = require('./lib/messages')
+const HyperspaceDb = require('./lib/db')
 
 const SOCK = '/tmp/hyperspace.sock'
-const INTERNAL_NAMESPACE = '@hyperspace:internal'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
     this.corestore = new Corestore(opts.storage || './storage')
     this.server = HRPC.createServer(this._onConnection.bind(this))
-    this.db = null
+    this.db = new HyperspaceDb(this.corestore)
     this.networker = null
 
     this._networkOpts = opts.network || {}
@@ -30,32 +30,44 @@ module.exports = class Hyperspace extends Nanoresource {
 
   async _open () {
     await this.corestore.ready()
+    await this.db.open()
     this.networker = new Networker(this.corestore, this._networkOpts)
-    await this._loadDatabase()
     await this.networker.listen()
     this._registerCoreTimeouts()
+    await this._rejoin()
     await this.server.listen(this._sock)
   }
 
   async _close () {
     await this.server.close()
     await this.networker.close()
-    await this.corestore.close()
-  }
-
-  // Private Methods
-
-  async _loadDatabase () {
-    this._namespacedStore = this.corestore.namespace(INTERNAL_NAMESPACE)
-    await this._namespacedStore.ready()
-    const dbFeed = this._namespacedStore.default()
-    this._db = hypertrie(null, null, { feed: dbFeed, valueEncoding: messages.NetworkConfiguration })
+    await this.db.close()
     await new Promise((resolve, reject) => {
-      this._db.ready(err => {
+      this.corestore.close(err => {
         if (err) return reject(err)
         return resolve(null)
       })
     })
+  }
+
+  // Public Methods
+
+  ready () {
+    return this.open()
+  }
+
+  // Private Methods
+
+  async _rejoin () {
+    const networkConfigurations = await this.db.listNetworkConfigurations()
+    for (const config of networkConfigurations) {
+      if (!config.announce) continue
+      const joinProm = this.networker.join(config.discoveryKey, {
+        announce: config.announce,
+        lookup: config.lookup
+      })
+      joinProm.catch(err => this.emit('swarm-error', err))
+    }
   }
 
   /**
@@ -238,18 +250,19 @@ module.exports = class Hyperspace extends Nanoresource {
       // Networking Methods
       async configureNetwork ({ configuration: { discoveryKey, announce, lookup, remember }, flush }) {
         if (discoveryKey.length !== 32) throw new Error('Invalid discovery key.')
-        const keyString = discoveryKey.toString('hex')
+        const dkeyString = discoveryKey.toString('hex')
 
         const join = announce || lookup
         var networkProm = null
         if (join) networkProm = this.networker.join(discoveryKey, { announce, lookup })
         else networkProm = this.networker.leave(discoveryKey)
 
+        const networkConfiguration = { discoveryKey, announce, lookup, remember }
         if (remember) {
-          // TODO: Store network configuration in DB.
+          await this.db.putNetworkConfiguration(networkConfiguration)
         } else {
-          if (join) this._transientNetworkConfigurations.set(keyString, { announce, lookup, remember })
-          else this._transientNetworkConfigurations.delete(keyString)
+          if (join) this._transientNetworkConfigurations.set(dkeyString, networkConfiguration)
+          else this._transientNetworkConfigurations.delete(dkeyString)
         }
 
         if (flush) {
@@ -259,7 +272,12 @@ module.exports = class Hyperspace extends Nanoresource {
       },
 
       async getNetworkConfiguration ({ discoveryKey }) {
-        // TODO: Get network configuration from DB.
+        const dkeyString = discoveryKey.toString('hex')
+        if (this._transientNetworkConfigurations.has(dkeyString)) {
+          return this._transientNetworkConfigurations.get(dkeyString)
+        }
+        const configuration = await this.db.getNetworkConfiguration(dkeyString)
+        return configuration || {}
       }
     })
   }
@@ -340,10 +358,6 @@ module.exports = class Hyperspace extends Nanoresource {
     })
   }
 
-  // Public Methods
-  ready () {
-    return this.open()
-  }
 }
 
 function getCore (sessions, id) {
