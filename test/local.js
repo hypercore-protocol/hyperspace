@@ -214,7 +214,7 @@ test('weak references work', async t => {
   t.end()
 })
 
-test.only('corestore feed event fires', async t => {
+test('corestore feed event fires', async t => {
   const { store, server, cleanup } = await createOne()
 
   const emittedFeeds = []
