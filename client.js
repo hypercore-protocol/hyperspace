@@ -89,7 +89,7 @@ module.exports = class RemoteCorestore extends Nanoresource {
 
   // Networking Methods
   configureNetwork (discoveryKey, opts = {}) {
-    return this._client.networker.configureNetwork({
+    return this._client.network.configureNetwork({
       configuration: {
         discoveryKey,
         announce: opts.announce !== false,
