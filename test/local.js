@@ -1,12 +1,11 @@
 const test = require('tape')
-const tmp = require('tmp-promise')
 const hypertrie = require('hypertrie')
 const hyperdrive = require('hyperdrive')
-const RemoteCorestore = require('../client')
-const HyperspaceServer = require('../server')
+
+const { createOne } = require('./helpers/create')
 
 test('can open a core', async t => {
-  const { store, server, cleanup } = await create()
+  const { store, server, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -21,7 +20,7 @@ test('can open a core', async t => {
 })
 
 test('can get a block', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -35,7 +34,7 @@ test('can get a block', async t => {
 })
 
 test('length/byteLength update correctly on append', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -63,7 +62,7 @@ test('length/byteLength update correctly on append', async t => {
 })
 
 test('update with current length returns', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -89,7 +88,7 @@ test('update with current length returns', async t => {
 })
 
 test('seek works correctly', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -120,7 +119,7 @@ test('seek works correctly', async t => {
 })
 
 test('has works correctly', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -139,7 +138,7 @@ test('has works correctly', async t => {
 })
 
 test('download works correctly', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.get()
   await core.ready()
@@ -164,7 +163,7 @@ test('download works correctly', async t => {
 })
 
 test('corestore default get works', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const ns1 = store.namespace('blah')
   const ns2 = store.namespace('blah2')
@@ -192,7 +191,7 @@ test('corestore default get works', async t => {
 })
 
 test('can run a hypertrie on remote hypercore', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const core = store.default()
   await core.ready()
@@ -221,20 +220,23 @@ test('can run a hypertrie on remote hypercore', async t => {
 })
 
 test('can run a hyperdrive on a remote hypercore', async t => {
-  const { server, store, cleanup } = await create()
+  const { server, store, cleanup } = await createOne()
 
   const drive = hyperdrive(store, null, {
     extension: false,
     valueEncoding: 'utf8'
   })
   await new Promise(resolve => {
+    console.log('before drive ready')
     drive.ready(err => {
       t.error(err, 'no error')
+      console.log('drive ready')
       drive.writeFile('/hello', 'world', err => {
         t.error(err, 'no error')
         drive.readFile('/hello', { encoding: 'utf8' }, (err, contents) => {
           t.error(err, 'no error')
           t.same(contents, 'world')
+          console.log('here at resolve')
           return resolve()
         })
       })
@@ -244,20 +246,3 @@ test('can run a hyperdrive on a remote hypercore', async t => {
   await cleanup()
   t.end()
 })
-
-async function create () {
-  const tmpDir = await tmp.dir({ unsafeCleanup: true })
-  const server = new HyperspaceServer({ storage: tmpDir.path })
-  await server.ready()
-
-  const store = new RemoteCorestore()
-  await store.ready()
-
-  const cleanup = () => Promise.all([
-    tmpDir.cleanup(),
-    server.close(),
-    store.close()
-  ])
-
-  return { server, store, cleanup }
-}

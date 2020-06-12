@@ -1,38 +1,115 @@
 const Corestore = require('corestore')
 const Networker = require('corestore-swarm-networking')
+const hypertrie = require('hypertrie')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('./lib/rpc')
+const messages = require('./lib/messages')
 
 const SOCK = '/tmp/hyperspace.sock'
+const INTERNAL_NAMESPACE = '@hyperspace:internal'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
     this.corestore = new Corestore(opts.storage || './storage')
-
-    this._sock = opts.host || SOCK
     this.server = HRPC.createServer(this._onConnection.bind(this))
+    this.db = null
+    this.networker = null
+
+    this._networkOpts = opts.network || {}
+    this._sock = opts.host || SOCK
     this._references = new Map()
+    this._transientNetworkConfigurations = new Map()
+
+    this._namespacedStore = null
+    this._db = null
   }
 
   // Nanoresource Methods
 
-  _open () {
-    return Promise.all([
-      this.corestore.ready(),
-      this._startListening()
-    ])
+  async _open () {
+    await this.corestore.ready()
+    this.networker = new Networker(this.corestore, this._networkOpts)
+    await this._loadDatabase()
+    await this.networker.listen()
+    this._registerCoreTimeouts()
+    await this.server.listen(this._sock)
   }
 
-  _close () {
-    return Promise.all([
-      this.corestore.close(),
-      this._stopListening()
-    ])
+  async _close () {
+    await this.server.close()
+    await this.networker.close()
+    await this.corestore.close()
   }
 
   // Private Methods
+
+  async _loadDatabase () {
+    this._namespacedStore = this.corestore.namespace(INTERNAL_NAMESPACE)
+    await this._namespacedStore.ready()
+    const dbFeed = this._namespacedStore.default()
+    this._db = hypertrie(null, null, { feed: dbFeed, valueEncoding: messages.NetworkConfiguration })
+    await new Promise((resolve, reject) => {
+      this._db.ready(err => {
+        if (err) return reject(err)
+        return resolve(null)
+      })
+    })
+  }
+
+  /**
+   * This is where we define our main heuristic for allowing hypercore gets/updates to proceed.
+   */
+  _registerCoreTimeouts () {
+    const flushSets = new Map()
+
+    this.networker.on('flushed', dkey => {
+      const keyString = dkey.toString('hex')
+      if (!flushSets.has(keyString)) return
+      const { flushSet, peerAddSet } = flushSets.get(keyString)
+      callAllInSet(flushSet)
+      callAllInSet(peerAddSet)
+    })
+
+    this.corestore.on('feed', core => {
+      const discoveryKey = core.discoveryKey
+      const peerAddSet = new Set()
+      const flushSet = new Set()
+      var globalFlushed = false
+
+      this.networker.swarm.flush(() => {
+        if (this.networker.joined(discoveryKey)) return
+        globalFlushed = true
+        callAllInSet(flushSet)
+        callAllInSet(peerAddSet)
+      })
+
+      flushSets.set(discoveryKey.toString('hex'), { flushSet, peerAddSet })
+      core.once('peer-add', () => callAllInSet(peerAddSet))
+
+      const timeouts = {
+        get: (cb) => {
+          if (this.networker.joined(discoveryKey)) {
+            if (this.networker.flushed(discoveryKey)) return cb()
+            return flushSet.add(cb)
+          }
+          if (globalFlushed) return cb()
+          return flushSet.add(cb)
+        },
+        update: (cb) => {
+          if (core.peers.length) return cb()
+          if (this.networker.joined(discoveryKey)) {
+            if (this.networker.flushed(discoveryKey) && !core.peers.length) return cb()
+            return peerAddSet.add(cb)
+          }
+          if (globalFlushed) return cb()
+          return peerAddSet.add(cb)
+        }
+      }
+      core.timeouts = timeouts
+    })
+  }
 
   _incrementCore (core) {
     let oldCount = this._references.get(core) || 0
@@ -54,8 +131,8 @@ module.exports = class Hyperspace extends Nanoresource {
 
   _onConnection (client) {
     const sessions = new Map()
-    const unlistensBySession = new Map()
     const resources = new Map()
+    const unlistensBySession = new Map()
 
     client.on('close', () => {
       for (const core of sessions.values()) {
@@ -68,6 +145,9 @@ module.exports = class Hyperspace extends Nanoresource {
       }
     })
     client.onRequest(this, {
+
+      // Corestore Methods
+
       async open ({ id, key, name, opts }) {
         let core = sessions.get(id)
         if (core) throw new Error('Session already in use.')
@@ -106,6 +186,8 @@ module.exports = class Hyperspace extends Nanoresource {
           writable: core.writable
         }
       },
+
+      // Hypercore Methods
 
       async close ({ id }) {
         const core = getCore(sessions, id)
@@ -151,16 +233,35 @@ module.exports = class Hyperspace extends Nanoresource {
       async undownload ({ id, resourceId }) {
         const core = getCore(sessions, id)
         return this._rpcUndownload(core, resources, resourceId)
+      },
+
+      // Networking Methods
+      async configureNetwork ({ configuration: { discoveryKey, announce, lookup, remember }, flush }) {
+        if (discoveryKey.length !== 32) throw new Error('Invalid discovery key.')
+        const keyString = discoveryKey.toString('hex')
+
+        const join = announce || lookup
+        var networkProm = null
+        if (join) networkProm = this.networker.join(discoveryKey, { announce, lookup })
+        else networkProm = this.networker.leave(discoveryKey)
+
+        if (remember) {
+          // TODO: Store network configuration in DB.
+        } else {
+          if (join) this._transientNetworkConfigurations.set(keyString, { announce, lookup, remember })
+          else this._transientNetworkConfigurations.delete(keyString)
+        }
+
+        if (flush) {
+          return networkProm
+        }
+        networkProm.catch(err => this.emit('swarm-error', err))
+      },
+
+      async getNetworkConfiguration ({ discoveryKey }) {
+        // TODO: Get network configuration from DB.
       }
     })
-  }
-
-  async _startListening () {
-    return this.server.listen(this._sock)
-  }
-
-  async _stopListening () {
-    return this.server.close()
   }
 
   // RPC Methods
@@ -249,6 +350,13 @@ function getCore (sessions, id) {
   const core = sessions.get(id)
   if (!core) throw new Error('Invalid session.')
   return core
+}
+
+function callAllInSet (set) {
+  for (const cb of set) {
+    cb()
+  }
+  set.clear()
 }
 
 function keyToString (key) {

@@ -34,6 +34,7 @@
     "nanoresource-promise": "^1.2.2"
   },
   "devDependencies": {
+    "@hyperswarm/dht": "^3.6.5",
     "compare": "^2.0.0",
     "hrpc": "^1.2.1",
     "hypercore-byte-stream": "git+https://github.com/andrewosh/hypercore-byte-stream",

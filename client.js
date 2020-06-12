@@ -71,6 +71,11 @@ module.exports = class RemoteCorestore extends Nanoresource {
   }
 
   get (key, opts = {}) {
+    if (key && typeof key !== 'string' && !Buffer.isBuffer(key)) {
+      opts = key
+      key = opts.key
+    }
+    if (typeof key === 'string') key = Buffer.from(key, 'hex')
     return new RemoteHypercore(this._client, this._sessions, key, opts)
   }
 
@@ -79,6 +84,19 @@ module.exports = class RemoteCorestore extends Nanoresource {
       client: this._client,
       sessions: this._sessions,
       name,
+    })
+  }
+
+  // Networking Methods
+  configureNetwork (discoveryKey, opts = {}) {
+    return this._client.configureNetwork({
+      configuration: {
+        discoveryKey,
+        announce: opts.announce !== false,
+        lookup: opts.lookup !== false,
+        remember: opts.remember,
+      },
+      flush: opts.flush
     })
   }
 }
@@ -114,9 +132,8 @@ class RemoteHypercore extends Nanoresource {
   async _open () {
     const rsp = await this._client.open({
       id: this._id,
-      key: this._key,
       name: this._name,
-      opts: {}
+      key: this.key
     })
     this.key = rsp.key
     this.discoveryKey = hypercoreCrypto.discoveryKey(this.key)

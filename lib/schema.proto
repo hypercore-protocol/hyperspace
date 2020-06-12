@@ -1,14 +1,11 @@
 syntax = "proto2";
 
-message HypercoreOptions {}
-
-// Top-level Methods
+// Corestore Methods
 
 message OpenRequest {
   required uint32 id = 1;
   optional bytes key = 2;
   optional string name = 3;
-  optional HypercoreOptions opts = 4;
 }
 message OpenResponse {
   required bytes key = 2;
@@ -17,11 +14,33 @@ message OpenResponse {
   required bool writable = 5;
 }
 
-message CloseRequest {
-  required uint32 id = 1;
+// Networking Methods
+
+message NetworkConfiguration {
+  required bytes discoveryKey = 1;
+  optional bool announce = 2;
+  optional bool lookup = 3;
+  optional bool remember = 4;
+}
+
+message ConfigureNetworkRequest {
+  required NetworkConfiguration configuration = 1;
+  optional bool flush = 2;
+}
+
+message GetNetworkConfigurationRequest {
+  required bytes discoveryKey = 1;
+}
+
+message GetNetworkConfigurationResponse {
+  optional NetworkConfiguration configuration = 1;
 }
 
 // Hypercore Methods
+
+message CloseRequest {
+  required uint32 id = 1;
+}
 
 message GetRequest {
   required uint32 id = 1;
@@ -97,6 +116,10 @@ message AppendEvent {
 service Hyperspace {
   // Corestore Methods
   rpc Open (OpenRequest) returns (OpenResponse);
+
+  // Networking Methods
+  rpc ConfigureNetwork (ConfigureNetworkRequest) returns (Void);
+  rpc GetNetworkConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
 
   // Hypercore Methods
   rpc Get (GetRequest) returns (GetResponse);
