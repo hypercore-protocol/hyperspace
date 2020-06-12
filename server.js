@@ -70,7 +70,7 @@ module.exports = class Hyperspace extends Nanoresource {
     client.onRequest(this, {
       async open ({ id, key, name, opts }) {
         let core = sessions.get(id)
-        if (core) throw new Error('Should not reuse session IDs')
+        if (core) throw new Error('Session already in use.')
 
         core = this.corestore.get({ key, _name: name, default: !!name, ...opts })
         sessions.set(id, core)
@@ -108,8 +108,7 @@ module.exports = class Hyperspace extends Nanoresource {
       },
 
       async close ({ id }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         let unlistens = unlistensBySession.get(id)
         if (unlistens) {
           for (const unlisten of unlistens) unlisten()
@@ -120,44 +119,37 @@ module.exports = class Hyperspace extends Nanoresource {
       },
 
       async get ({ id, seq, wait, ifAvailable }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcGet(core, seq, { ifAvailable, wait })
       },
 
       async append ({ id, blocks }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcAppend(core, blocks)
       },
 
       async update ({ id, ifAvailable, minLength, hash }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcUpdate(core, { ifAvailable, minLength, hash })
       },
 
       async seek ({ id, byteOffset, start, end, wait, ifAvailable }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcSeek(core, byteOffset, { start, end, wait, ifAvailable })
       },
 
       async has ({ id, seq }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcHas(core, seq)
       },
 
       async download ({ id, resourceId, start, end, blocks, linear }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcDownload(core, resources, resourceId, { start, end, blocks: blocks.length ? blocks : null, linear})
       },
 
       async undownload ({ id, resourceId }) {
-        const core = sessions.get(id)
-        if (!core) throw new Error('Invalid session.')
+        const core = getCore(sessions, id)
         return this._rpcUndownload(core, resources, resourceId)
       }
     })
@@ -174,6 +166,7 @@ module.exports = class Hyperspace extends Nanoresource {
   // RPC Methods
 
   _rpcGet (core, seq, opts) {
+    console.log('IN RPCGET, core:', core, 'seq:', seq)
     return new Promise((resolve, reject) => {
       core.get(seq, opts, (err, block) => {
         if (err) return reject(err)
@@ -198,6 +191,7 @@ module.exports = class Hyperspace extends Nanoresource {
   }
 
   _rpcUndownload (core, resources, resourceId) {
+    console.log('undownload with resource ID:', resourceId)
     const r = resources.get(resourceId)
     if (!r) throw new Error('Invalid resource id.')
     resources.delete(resourceId)
@@ -251,6 +245,12 @@ module.exports = class Hyperspace extends Nanoresource {
   ready () {
     return this.open()
   }
+}
+
+function getCore (sessions, id) {
+  const core = sessions.get(id)
+  if (!core) throw new Error('Invalid session.')
+  return core
 }
 
 function keyToString (key) {

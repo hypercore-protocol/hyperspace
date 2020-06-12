@@ -27,7 +27,7 @@ function createLocal (numRecords, recordSize, cb) {
   })
 }
 
-// require('hypercore-byte-stream/test/helpers/create').createLocal = createLocal
+require('hypercore-byte-stream/test/helpers/create').createLocal = createLocal
 
 tape('start', async function (t) {
   server = new HyperspaceServer({ storage: ram })

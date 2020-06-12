@@ -147,13 +147,15 @@ test('download works correctly', async t => {
   const buf = Buffer.from('hello world', 'utf8')
   let seq = await core.append(buf)
 
-  const prom = core.download({ start: 0, end: 10 })
-  await core.undownload(prom)
+  for (let i = 0; i < 3; i++) {
+    const prom = core.download({ start: 0, end: 10 })
+    await core.undownload(prom)
 
-  try {
-    await prom
-  } catch (err) {
-    t.same(err.message, 'Download was cancelled')
+    try {
+      await prom
+    } catch (err) {
+      t.same(err.message, 'Download was cancelled')
+    }
   }
 
   await core.close()
