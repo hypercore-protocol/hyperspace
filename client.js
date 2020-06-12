@@ -6,7 +6,7 @@ const { WriteStream, ReadStream } = require('hypercore-streams')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const HRPC = require('./lib/rpc')
 
-const SOCK = '/tmp/hyperspace.sock'
+const SOCK = process.env['NODE_ENV'] === 'test' ? './hyperspace.sock' : '/tmp/hyperspace.sock'
 
 class Sessions {
   constructor () {
