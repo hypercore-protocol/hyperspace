@@ -166,7 +166,6 @@ module.exports = class Hyperspace extends Nanoresource {
   // RPC Methods
 
   _rpcGet (core, seq, opts) {
-    console.log('IN RPCGET, core:', core, 'seq:', seq)
     return new Promise((resolve, reject) => {
       core.get(seq, opts, (err, block) => {
         if (err) return reject(err)
@@ -191,7 +190,6 @@ module.exports = class Hyperspace extends Nanoresource {
   }
 
   _rpcUndownload (core, resources, resourceId) {
-    console.log('undownload with resource ID:', resourceId)
     const r = resources.get(resourceId)
     if (!r) throw new Error('Invalid resource id.')
     resources.delete(resourceId)
