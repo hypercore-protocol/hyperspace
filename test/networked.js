@@ -49,3 +49,37 @@ test('announced discovery key is rejoined on restart', async t => {
   await cleanup()
   t.end()
 })
+
+test('peers are set on a remote hypercore', async t => {
+  const { stores, servers, cleanup } = await createMany(5)
+  const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
+
+  const store1 = stores[0]
+  const core1 = store1.get()
+  await core1.ready()
+  await core1.append(Buffer.from('hello world', 'utf8'))
+  await store1.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+
+  // Create 4 more peers, and each one should only connect to the first.
+  for (let i = 1; i < stores.length; i++) {
+    const store = stores[i]
+    const core = store.get(core1.key)
+    await core.ready()
+    let peerAddProm = new Promise(resolve => {
+      let opened = 0
+      const openedListener = peer => {
+        t.true(peer.remotePublicKey.equals(firstPeerRemoteKey))
+        if (++opened === 1) {
+          core.removeListener('peer-open', openedListener)
+          return resolve()
+        }
+      }
+      core.on('peer-open', openedListener)
+    })
+    await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+    await peerAddProm
+  }
+
+  await cleanup()
+  t.end()
+})

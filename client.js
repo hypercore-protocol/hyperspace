@@ -56,6 +56,16 @@ module.exports = class RemoteCorestore extends Nanoresource {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onclose()
+      },
+      onPeerOpen ({ id, peer }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onpeeropen(peer)
+      },
+      onPeerRemove ({ id, peer }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onpeerremove(peer)
       }
     })
     this._client.corestore.onRequest(this, {
@@ -132,6 +142,7 @@ class RemoteHypercore extends Nanoresource {
     this.writable = false
     this.weak = !!opts.weak
     this.lazy = !!opts.lazy
+    this.peers = []
 
     this._client = client
     this._sessions = sessions
@@ -181,6 +192,27 @@ class RemoteHypercore extends Nanoresource {
 
   _onclose (rsp) {
     this.emit('close')
+  }
+
+  _onpeeropen (peer) {
+    const remotePeer = new RemoteHypercorePeer(peer.type, peer.remoteAddress, peer.remotePublicKey)
+    this.peers.push(remotePeer)
+    this.emit('peer-open', remotePeer)
+  }
+
+  _onpeerremove (peer) {
+    let remotePeer = null
+    let idx = -1
+    for (let i = 0; i < this.peers.length; i++) {
+      let p = this.peers[i]
+      if (p.id === peer.id) {
+        remotePeer = p
+        idx = i
+      }
+    }
+    if (idx === -1) throw new Error('A peer was removed that was not previously added.')
+    this.peers.splice(idx, 1)
+    this.emit('peer-remove', remotePeer)
   }
 
   // Private Methods
@@ -320,6 +352,14 @@ class RemoteHypercore extends Nanoresource {
 
   replicate () {
     throw new Error('Cannot call replicate on a RemoteHyperdrive')
+  }
+}
+
+class RemoteHypercorePeer {
+  constructor (type, remoteAddress, remotePublicKey) {
+    this.type = type
+    this.remoteAddress = remoteAddress
+    this.remotePublicKey = remotePublicKey
   }
 }
 

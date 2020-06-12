@@ -2,9 +2,9 @@ syntax = "proto2";
 
 // General Structs
 message Peer {
-  required bytes id = 1;
-  required bytes remotePublicKey = 2;
-  required string remoteHost = 3;
+  required bytes remotePublicKey = 1;
+  required string remoteAddress = 2;
+  required string type = 3;
 }
 
 // Corestore Methods
@@ -160,7 +160,7 @@ service Hypercore {
   // Events
   rpc OnAppend (AppendEvent) returns (Void);
   rpc OnClose (CloseEvent) returns (Void);
-  rpc OnPeerAdd (PeerEvent) returns (Void);
+  rpc OnPeerOpen (PeerEvent) returns (Void);
   rpc OnPeerRemove (PeerEvent) returns (Void);
 }
 
