@@ -14,8 +14,7 @@ const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
 
 const os = require('os')
-const p = require('path')
-const SOCK = process.env['NODE_ENV'] === 'test' ? p.join(os.homedir(), './hyperspace.sock') : '/tmp/hyperspace.sock'
+const SOCK = os.platform() !== 'win32' ? '/tmp/hyperspace.sock' : '\\\\.\\pipe\\hyperspace'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
