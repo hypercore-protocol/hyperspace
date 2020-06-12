@@ -112,16 +112,15 @@ message AppendEvent {
   required uint64 byteLength = 3;
 }
 
-// TODO: Before official release, tag these methods with explicit IDs
-service Hyperspace {
-  // Corestore Methods
+// TODO: Before official release, tag these methods with explicit IDs.
+
+service Corestore {
+   // Methods
   rpc Open (OpenRequest) returns (OpenResponse);
+}
 
-  // Networking Methods
-  rpc ConfigureNetwork (ConfigureNetworkRequest) returns (Void);
-  rpc GetNetworkConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
-
-  // Hypercore Methods
+service Hypercore {
+   // Methods
   rpc Get (GetRequest) returns (GetResponse);
   rpc Append (AppendRequest) returns (AppendResponse);
   rpc Update (UpdateRequest) returns (Void);
@@ -131,6 +130,12 @@ service Hyperspace {
   rpc Undownload (UndownloadRequest) returns (Void);
   rpc Close (CloseRequest) returns (Void);
 
-  // Hypercore Events
+  // Events
   rpc OnAppend (AppendEvent) returns (Void);
+}
+
+service Network {
+   // Methods
+  rpc ConfigureNetwork (ConfigureNetworkRequest) returns (Void);
+  rpc GetNetworkConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
 }
