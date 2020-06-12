@@ -1,5 +1,12 @@
 syntax = "proto2";
 
+// General Structs
+message Peer {
+  required bytes id = 1;
+  required bytes remotePublicKey = 2;
+  required string remoteHost = 3;
+}
+
 // Corestore Methods
 
 message OpenRequest {
@@ -14,6 +21,12 @@ message OpenResponse {
   required uint64 length = 3;
   required uint64 byteLength = 4;
   required bool writable = 5;
+}
+
+// Corestore Events
+
+message FeedEvent {
+  required bytes key = 1;
 }
 
 // Networking Methods
@@ -106,12 +119,17 @@ message UndownloadRequest {
   required uint64 resourceId = 2;
 }
 
-// Events
+// Hypercore Events
 
 message AppendEvent {
   required uint64 id = 1;
   required uint64 length = 2;
   required uint64 byteLength = 3;
+}
+
+message PeerEvent {
+  required uint64 id = 1;
+  required Peer peer = 2;
 }
 
 message CloseEvent {
@@ -123,6 +141,9 @@ message CloseEvent {
 service Corestore {
    // Methods
   rpc Open (OpenRequest) returns (OpenResponse);
+
+  // Events
+  rpc OnFeed (FeedEvent) returns (Void);
 }
 
 service Hypercore {
@@ -139,10 +160,14 @@ service Hypercore {
   // Events
   rpc OnAppend (AppendEvent) returns (Void);
   rpc OnClose (CloseEvent) returns (Void);
+  rpc OnPeerAdd (PeerEvent) returns (Void);
+  rpc OnPeerRemove (PeerEvent) returns (Void);
 }
 
 service Network {
    // Methods
   rpc ConfigureNetwork (ConfigureNetworkRequest) returns (Void);
   rpc GetNetworkConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
+
+  // Events
 }

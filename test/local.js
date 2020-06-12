@@ -214,6 +214,41 @@ test('weak references work', async t => {
   t.end()
 })
 
+test.only('corestore feed event fires', async t => {
+  const { store, server, cleanup } = await createOne()
+
+  const emittedFeeds = []
+  const emittedProm = new Promise(resolve => {
+    store.on('feed', async feed => {
+      t.same(feed._id, undefined)
+      emittedFeeds.push(feed)
+      if (emittedFeeds.length === 3) {
+        await onAllEmitted()
+        return resolve()
+      }
+    })
+  })
+
+  const core1 = store.get()
+  await core1.ready()
+  const core2 = store.get()
+  await core2.ready()
+  const core3 = store.get()
+  await core3.ready()
+  await emittedProm
+
+  async function onAllEmitted () {
+    for (const feed of emittedFeeds) {
+      await feed.ready()
+    }
+    t.true(emittedFeeds[0].key.equals(core1.key))
+    t.true(emittedFeeds[1].key.equals(core2.key))
+    t.true(emittedFeeds[2].key.equals(core3.key))
+    await cleanup()
+    t.end()
+  }
+})
+
 test('can run a hypertrie on remote hypercore', async t => {
   const { server, store, cleanup } = await createOne()
 

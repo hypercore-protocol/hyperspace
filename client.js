@@ -41,6 +41,8 @@ module.exports = class RemoteCorestore extends Nanoresource {
     this._sessions = opts.sessions || new Sessions()
   }
 
+  // Nanoresource Methods
+
   _open () {
     if (this._client) return
     this._client = HRPC.connect(this._sock)
@@ -56,12 +58,26 @@ module.exports = class RemoteCorestore extends Nanoresource {
         remoteCore._onclose()
       }
     })
+    this._client.corestore.onRequest(this, {
+      onFeed ({ key }) {
+        return this._onfeed(key)
+      }
+    })
   }
 
   _close () {
     if (this._name) return
     return this._client.destroy()
   }
+
+  // Events
+
+  _onfeed (key) {
+    if (!this.listenerCount('feed')) return
+    this.emit('feed', this.get(key, { weak: true, lazy: true }))
+  }
+
+  // Public Methods
 
   ready (cb) {
     return maybe(cb, this.open())
@@ -115,31 +131,26 @@ class RemoteHypercore extends Nanoresource {
     this.byteLength = 0
     this.writable = false
     this.weak = !!opts.weak
+    this.lazy = !!opts.lazy
 
     this._client = client
     this._sessions = sessions
     this._name = opts.name
-    this._id = this._sessions.create(this)
 
-    this.ready(() => {})
+    if (!this.lazy) {
+      this._id = this._sessions.create(this)
+      this.ready(() => {})
+    }
   }
 
   ready (cb) {
     return maybe(cb, this.open())
   }
 
-  // Events
-  _onappend (rsp) {
-    this.length = rsp.length
-    this.byteLength = rsp.byteLength
-    this.emit('append')
-  }
-
-  _onclose (rsp) {
-    this.emit('close')
-  }
+  // Nanoresource Methods
 
   async _open () {
+    if (this.lazy) this._id = this._sessions.create(this)
     const rsp = await this._client.corestore.open({
       id: this._id,
       name: this._name,
@@ -159,6 +170,20 @@ class RemoteHypercore extends Nanoresource {
     this._sessions.delete(this._id)
     this.emit('close')
   }
+
+  // Events
+
+  _onappend (rsp) {
+    this.length = rsp.length
+    this.byteLength = rsp.byteLength
+    this.emit('append')
+  }
+
+  _onclose (rsp) {
+    this.emit('close')
+  }
+
+  // Private Methods
 
   async _append (blocks) {
     if (Buffer.isBuffer(blocks)) blocks = [blocks]
@@ -208,6 +233,8 @@ class RemoteHypercore extends Nanoresource {
     })
     return rsp.has
   }
+
+  // Public Methods
 
   append (blocks, cb) {
     return maybe(cb, this._append(blocks))
