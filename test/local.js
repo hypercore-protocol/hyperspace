@@ -190,6 +190,30 @@ test('corestore default get works', async t => {
   t.end()
 })
 
+test('weak references work', async t => {
+  const { store, server, cleanup } = await createOne()
+
+  const core1 = store.get()
+  await core1.ready()
+
+  const core2 = store.get(core1.key, { weak: true })
+  await core2.ready()
+
+  await core1.append(Buffer.from('hello world', 'utf8'))
+  t.same(core2.length, 1)
+
+  let closed = false
+  core2.on('close', () => {
+    // core2 should close when core1 closes (there should only be one reference).
+    closed = true
+  })
+  await core1.close()
+
+  t.true(closed)
+  await cleanup()
+  t.end()
+})
+
 test('can run a hypertrie on remote hypercore', async t => {
   const { server, store, cleanup } = await createOne()
 

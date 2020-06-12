@@ -6,7 +6,9 @@ message OpenRequest {
   required uint32 id = 1;
   optional bytes key = 2;
   optional string name = 3;
+  optional bool weak = 4;
 }
+
 message OpenResponse {
   required bytes key = 2;
   required uint64 length = 3;
@@ -112,6 +114,10 @@ message AppendEvent {
   required uint64 byteLength = 3;
 }
 
+message CloseEvent {
+  required uint64 id = 1;
+}
+
 // TODO: Before official release, tag these methods with explicit IDs.
 
 service Corestore {
@@ -132,6 +138,7 @@ service Hypercore {
 
   // Events
   rpc OnAppend (AppendEvent) returns (Void);
+  rpc OnClose (CloseEvent) returns (Void);
 }
 
 service Network {

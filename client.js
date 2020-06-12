@@ -49,6 +49,11 @@ module.exports = class RemoteCorestore extends Nanoresource {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onappend({ length, byteLength })
+      },
+      onClose ({ id }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onclose()
       }
     })
   }
@@ -109,6 +114,7 @@ class RemoteHypercore extends Nanoresource {
     this.length = 0
     this.byteLength = 0
     this.writable = false
+    this.weak = !!opts.weak
 
     this._client = client
     this._sessions = sessions
@@ -129,11 +135,16 @@ class RemoteHypercore extends Nanoresource {
     this.emit('append')
   }
 
+  _onclose (rsp) {
+    this.emit('close')
+  }
+
   async _open () {
     const rsp = await this._client.corestore.open({
       id: this._id,
       name: this._name,
-      key: this.key
+      key: this.key,
+      weak: this.weak
     })
     this.key = rsp.key
     this.discoveryKey = hypercoreCrypto.discoveryKey(this.key)
