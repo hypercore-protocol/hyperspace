@@ -36,6 +36,7 @@
   "devDependencies": {
     "compare": "^2.0.0",
     "hrpc": "^1.2.1",
+    "hypercore-byte-stream": "^1.0.8",
     "hyperdrive": "git+https://github.com/hypercore-protocol/hyperdrive#remote-hypercore-testing",
     "protocol-buffers": "^4.1.2",
     "random-access-memory": "^3.1.1",
