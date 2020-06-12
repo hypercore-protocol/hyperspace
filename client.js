@@ -44,7 +44,7 @@ module.exports = class RemoteCorestore extends Nanoresource {
   _open () {
     if (this._client) return
     this._client = HRPC.connect(this._sock)
-    this._client.onRequest(this, {
+    this._client.hypercore.onRequest(this, {
       onAppend ({ id, length, byteLength}) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
@@ -89,7 +89,7 @@ module.exports = class RemoteCorestore extends Nanoresource {
 
   // Networking Methods
   configureNetwork (discoveryKey, opts = {}) {
-    return this._client.configureNetwork({
+    return this._client.networker.configureNetwork({
       configuration: {
         discoveryKey,
         announce: opts.announce !== false,
@@ -130,7 +130,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _open () {
-    const rsp = await this._client.open({
+    const rsp = await this._client.corestore.open({
       id: this._id,
       name: this._name,
       key: this.key
@@ -144,14 +144,14 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _close () {
-    await this._client.close({ id: this._id })
+    await this._client.hypercore.close({ id: this._id })
     this._sessions.delete(this._id)
     this.emit('close')
   }
 
   async _append (blocks) {
     if (Buffer.isBuffer(blocks)) blocks = [blocks]
-    const rsp = await this._client.append({
+    const rsp = await this._client.hypercore.append({
       id: this._id,
       blocks
     })
@@ -159,7 +159,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _get (seq, opts) {
-    const rsp = await this._client.get({
+    const rsp = await this._client.hypercore.get({
       ...opts,
       seq,
       id: this._id
@@ -172,14 +172,14 @@ class RemoteHypercore extends Nanoresource {
     await this.ready()
     if (typeof opts === 'number') opts = { minLength: opts }
     if (typeof opts.minLength !== 'number') opts.minLength = this.length + 1
-    return this._client.update({
+    return this._client.hypercore.update({
       ...opts,
       id: this._id
     })
   }
 
   async _seek (byteOffset, opts) {
-    const rsp = await this._client.seek({
+    const rsp = await this._client.hypercore.seek({
       byteOffset,
       ...opts,
       id: this._id
@@ -191,7 +191,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _has (seq) {
-    const rsp = await this._client.has({
+    const rsp = await this._client.hypercore.has({
       seq,
       id: this._id
     })
@@ -260,7 +260,7 @@ class RemoteHypercore extends Nanoresource {
 
     const resourceId = this._sessions.createResourceId()
 
-    const prom = this._client.download({ ...range, id: this._id, resourceId })
+    const prom = this._client.hypercore.download({ ...range, id: this._id, resourceId })
     prom.catch(noop) // optional promise due to the hypercore signature
     prom.resourceId = resourceId
 
@@ -270,7 +270,7 @@ class RemoteHypercore extends Nanoresource {
 
   undownload (dl, cb) {
     if (typeof dl.resourceId !== 'number') throw new Error('Must pass a download return value')
-    const prom = this._client.undownload({ id: this._id, resourceId: dl.resourceId })
+    const prom = this._client.hypercore.undownload({ id: this._id, resourceId: dl.resourceId })
     prom.catch(noop) // optional promise due to the hypercore signature
     return maybe(cb, prom)
   }
