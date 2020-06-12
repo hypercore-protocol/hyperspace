@@ -9,10 +9,10 @@ const BOOTSTRAP_URL = `localhost:${BOOTSTRAP_PORT}`
 
 async function createOne (opts = {}) {
   const tmpDir = opts.dir || await tmp.dir({ unsafeCleanup: true })
-  const server = new HyperspaceServer({ storage: tmpDir.path, network: { bootstrap: opts.bootstrap || false } })
+  const server = new HyperspaceServer({ storage: tmpDir.path, host: opts.host, network: { bootstrap: opts.bootstrap || false } })
   await server.ready()
 
-  const store = new RemoteCorestore()
+  const store = new RemoteCorestore({ host: opts.host })
   await store.ready()
 
   const cleanup = () => Promise.all([
@@ -40,7 +40,7 @@ async function createMany (numDaemons, opts) {
   })
 
   for (let i = 0; i < numDaemons; i++) {
-    const { server, store, cleanup, dir } = await createOne({ bootstrap: bootstrapOpt })
+    const { server, store, cleanup, dir } = await createOne({ bootstrap: bootstrapOpt, host: 'hyperspace-' + i })
     cleanups.push(cleanup)
     servers.push(server)
     stores.push(store)

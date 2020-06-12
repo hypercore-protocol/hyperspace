@@ -5,9 +5,7 @@ const { WriteStream, ReadStream } = require('hypercore-streams')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const HRPC = require('./lib/rpc')
-
-const os = require('os')
-const SOCK = os.platform() !== 'win32' ? '/tmp/hyperspace.sock' : '\\\\.\\pipe\\hyperspace'
+const getSocketName = require('./lib/socket')
 
 class Sessions {
   constructor () {
@@ -38,7 +36,7 @@ module.exports = class RemoteCorestore extends Nanoresource {
     super()
     this._client = opts.client
     this._name = opts.name
-    this._sock = opts.host || SOCK
+    this._sock = getSocketName(opts.host)
     this._sessions = opts.sessions || new Sessions()
   }
 

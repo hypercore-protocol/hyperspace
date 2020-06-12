@@ -8,13 +8,11 @@ const messages = require('./lib/messages')
 const HyperspaceDb = require('./lib/db')
 const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
+const getSocketName = require('./lib/socket')
 
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
-
-const os = require('os')
-const SOCK = os.platform() !== 'win32' ? '/tmp/hyperspace.sock' : '\\\\.\\pipe\\hyperspace'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
@@ -26,7 +24,7 @@ module.exports = class Hyperspace extends Nanoresource {
     this.networker = null
 
     this._networkOpts = opts.network || {}
-    this._sock = opts.host || SOCK
+    this._sock = getSocketName(opts.host)
     this._references = new Map()
     this._transientNetworkConfigurations = new Map()
 
