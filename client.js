@@ -7,8 +7,7 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 const HRPC = require('./lib/rpc')
 
 const os = require('os')
-const p = require('path')
-const SOCK = process.env['NODE_ENV'] === 'test' ? p.join(os.homedir(), 'hyperspace.sock') : '/tmp/hyperspace.sock'
+const SOCK = os.platform !== 'win32' ? '/tmp/hyperspace.sock' : '\\\\.\\pipe\\hyperspace'
 
 class Sessions {
   constructor () {
