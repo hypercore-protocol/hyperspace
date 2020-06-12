@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "NODE_ENV=test tape test/*.js",
+    "test": "tape test/*.js",
     "build": "hrpc lib/schema.proto --rpc=lib/rpc.js --messages=lib/messages.js"
   },
   "repository": {

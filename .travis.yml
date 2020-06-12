@@ -5,6 +5,9 @@ node_js:
   - '14'
   - 'lts/*'
 
+env:
+  - NODE_ENV=test
+
 os:
   - windows
   - osx
