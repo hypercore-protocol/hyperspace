@@ -153,9 +153,15 @@ class RemoteHypercore extends Nanoresource {
     this.length = 0
     this.byteLength = 0
     this.writable = false
+    this.peers = []
+    this.valueEncoding = null
+    if (opts.valueEncoding) {
+      if (typeof opts.valueEncoding === 'string') this.valueEncoding = codecs(opts.valueEncoding)
+      else this.valueEncoding = opts.valueEncoding
+    }
+
     this.weak = !!opts.weak
     this.lazy = !!opts.lazy
-    this.peers = []
 
     this._client = client
     this._sessions = sessions
@@ -232,6 +238,7 @@ class RemoteHypercore extends Nanoresource {
 
   async _append (blocks) {
     if (Buffer.isBuffer(blocks)) blocks = [blocks]
+    if (this.valueEncoding) blocks = blocks.map(b => this.valueEncoding.encode(b))
     const rsp = await this._client.hypercore.append({
       id: this._id,
       blocks
@@ -246,6 +253,7 @@ class RemoteHypercore extends Nanoresource {
       id: this._id
     })
     if (opts && opts.valueEncoding) return codecs(opts.valueEncoding).decode(rsp.block)
+    if (this.valueEncoding) return this.valueEncoding.decode(rsp.block)
     return rsp.block
   }
 
