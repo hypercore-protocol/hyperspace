@@ -72,6 +72,16 @@ module.exports = class RemoteCorestore extends Nanoresource {
         return this._onfeed(key)
       }
     })
+    this._client.network.onRequest(this, {
+      onPeerOpen ({ peer }) {
+        console.log('in client network onPeerOpen')
+        return this.emit('peer-open', peer)
+      },
+      onPeerRemove ({ peer }) {
+        console.log('in client network onPeerRemove')
+        return this.emit('peer-remove', peer)
+      }
+    })
   }
 
   _close () {

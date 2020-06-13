@@ -153,3 +153,50 @@ test('can get all network configurations', async t => {
   await cleanup()
   t.end()
 })
+
+test.only('can get swarm-level networking events', async t => {
+  const { stores, servers, cleanup } = await createMany(5)
+  const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
+
+  const store1 = stores[0]
+  const core1 = store1.get()
+  await core1.ready()
+  await core1.append(Buffer.from('hello world', 'utf8'))
+  await store1.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+
+  let opened = 0
+  let closed = 0
+  const openProm = new Promise(resolve => {
+    const openListener = peer => {
+      console.log('PEER OPENED:', peer)
+      if (++opened === 4) return resolve()
+      return null
+    }
+    store1.on('peer-open', openListener)
+  })
+  const closeProm = new Promise(resolve => {
+    const removeListener = peer => {
+      console.log('PEER REMOVED:', peer)
+      if (++closed === 4) return resolve()
+      return null
+    }
+    store1.on('peer-remove', removeListener)
+  })
+
+  // Create 4 more peers, and each one should only connect to the first.
+  for (let i = 1; i < stores.length; i++) {
+    const store = stores[i]
+    const core = store.get(core1.key)
+    await core.ready()
+    await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+  }
+
+  for (let i = 1; i < stores.length; i++) {
+    await servers[i].close()
+  }
+
+  await Promise.all([openProm, closeProm])
+  t.pass('all open/remove events were fired')
+  await cleanup()
+  t.end()
+})
