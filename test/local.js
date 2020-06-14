@@ -166,6 +166,7 @@ test('valueEncodings work', async t => {
   const { server, store, cleanup } = await createOne()
 
   const core = store.get({ valueEncoding: 'utf8' })
+
   await core.ready()
 
   await core.append('hello world')
@@ -187,9 +188,10 @@ test('corestore default get works', async t => {
 
   const buf = Buffer.from('hello world', 'utf8')
   await core.append(buf)
-
   await core.close()
 
+  // we have a timing thing here we should fix
+  await new Promise(resolve => setTimeout(resolve, 500))
   core = ns1.default()
   await core.ready()
 
@@ -216,14 +218,11 @@ test('weak references work', async t => {
   await core1.append(Buffer.from('hello world', 'utf8'))
   t.same(core2.length, 1)
 
-  let closed = false
-  core2.on('close', () => {
-    // core2 should close when core1 closes (there should only be one reference).
-    closed = true
-  })
+  const closed = new Promise((resolve) => core2.once('close', resolve))
   await core1.close()
 
-  t.true(closed)
+  await closed
+  t.pass('closed')
   await cleanup()
   t.end()
 })
