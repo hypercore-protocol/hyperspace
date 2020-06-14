@@ -1,6 +1,6 @@
 const tmp = require('tmp-promise')
 const dht = require('@hyperswarm/dht')
-const RemoteCorestore = require('../../client')
+const HyperspaceClient = require('../../client')
 const HyperspaceServer = require('../../server')
 
 const BASE_PORT = 4101
@@ -12,21 +12,21 @@ async function createOne (opts = {}) {
   const server = new HyperspaceServer({ storage: tmpDir.path, host: opts.host, network: { bootstrap: opts.bootstrap || false } })
   await server.ready()
 
-  const store = new RemoteCorestore({ host: opts.host })
-  await store.ready()
+  const client = new HyperspaceClient({ host: opts.host })
+  await client.ready()
 
   const cleanup = () => Promise.all([
     tmpDir.cleanup(),
     server.close(),
-    store.close()
+    client.close()
   ])
 
-  return { server, store, cleanup, dir: tmpDir }
+  return { server, client, cleanup, dir: tmpDir }
 }
 
 async function createMany (numDaemons, opts) {
   const cleanups = []
-  const stores = []
+  const clients = []
   const servers = []
   const dirs = []
 
@@ -40,14 +40,14 @@ async function createMany (numDaemons, opts) {
   })
 
   for (let i = 0; i < numDaemons; i++) {
-    const { server, store, cleanup, dir } = await createOne({ bootstrap: bootstrapOpt, host: 'hyperspace-' + i })
+    const { server, client, cleanup, dir } = await createOne({ bootstrap: bootstrapOpt, host: 'hyperspace-' + i })
     cleanups.push(cleanup)
     servers.push(server)
-    stores.push(store)
+    clients.push(client)
     dirs.push(dir)
   }
 
-  return { stores, servers, cleanup, dirs, bootstrapOpt }
+  return { clients, servers, cleanup, dirs, bootstrapOpt }
 
   async function cleanup (opts) {
     for (const cleanupInstance of cleanups) {

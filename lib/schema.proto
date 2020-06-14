@@ -175,6 +175,7 @@ service Network {
   rpc GetAllNetworkConfigurations (Void) returns (GetAllNetworkConfigurationsResponse);
 
   // Events
+  rpc OnReady (NetworkReadyEvent) returns (Void);
   rpc OnPeerOpen (PeerEvent) returns (Void);
   rpc OnPeerRemove (PeerEvent) returns (Void);
 }

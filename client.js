@@ -31,20 +31,13 @@ class Sessions {
   }
 }
 
-module.exports = class RemoteCorestore extends Nanoresource {
+class RemoteCorestore extends Nanoresource {
   constructor (opts = {}) {
     super()
     this._client = opts.client
     this._name = opts.name
-    this._sock = getSocketName(opts.host)
     this._sessions = opts.sessions || new Sessions()
-  }
 
-  // Nanoresource Methods
-
-  _open () {
-    if (this._client) return
-    this._client = HRPC.connect(this._sock)
     this._client.hypercore.onRequest(this, {
       onAppend ({ id, length, byteLength}) {
         const remoteCore = this._sessions.get(id)
@@ -72,21 +65,6 @@ module.exports = class RemoteCorestore extends Nanoresource {
         return this._onfeed(key)
       }
     })
-    this._client.network.onRequest(this, {
-      onPeerOpen ({ peer }) {
-        console.log('in client network onPeerOpen')
-        return this.emit('peer-open', peer)
-      },
-      onPeerRemove ({ peer }) {
-        console.log('in client network onPeerRemove')
-        return this.emit('peer-remove', peer)
-      }
-    })
-  }
-
-  _close () {
-    if (this._name) return
-    return this._client.destroy()
   }
 
   // Events
@@ -98,9 +76,6 @@ module.exports = class RemoteCorestore extends Nanoresource {
 
   // Public Methods
 
-  ready (cb) {
-    return maybe(cb, this.open())
-  }
 
   replicate () {
     throw new Error('Cannot call replicate on a RemoteCorestore')
@@ -127,7 +102,25 @@ module.exports = class RemoteCorestore extends Nanoresource {
     })
   }
 
-  // Networking Methods
+  ready (cb) {
+    return process.nextTick(cb, null)
+  }
+}
+
+class RemoteNetworker {
+  constructor (opts) {
+    this._client = opts.client
+    this.publicKey = null
+
+    this._client.network.onRequest(this, {
+      onPeerOpen ({ peer }) {
+        return this.emit('peer-open', peer)
+      },
+      onPeerRemove ({ peer }) {
+        return this.emit('peer-remove', peer)
+      }
+    })
+  }
 
   configureNetwork (discoveryKey, opts = {}) {
     return this._client.network.configureNetwork({
@@ -390,6 +383,28 @@ class RemoteHypercorePeer {
     this.type = type
     this.remoteAddress = remoteAddress
     this.remotePublicKey = remotePublicKey
+  }
+}
+
+module.exports = class HyperspaceClient extends Nanoresource {
+  constructor (opts = {}) {
+    super()
+    this._sock = getSocketName(opts.host)
+    this._client = HRPC.connect(this._sock)
+    this.corestore = new RemoteCorestore({ client: this._client })
+    this.network = new RemoteNetworker({ client: this._client })
+  }
+
+  _open () {
+    return this._client.connected
+  }
+
+  _close () {
+    return this._client.destroy()
+  }
+
+  ready (cb) {
+    return maybe(cb, this.open())
   }
 }
 

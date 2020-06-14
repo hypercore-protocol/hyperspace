@@ -1,20 +1,20 @@
 const test = require('tape')
 const { createOne, createMany } = require('./helpers/create')
 
-test('can replicate one core between two daemons', async t => {
-  const { stores, servers, cleanup } = await createMany(2)
+test.only('can replicate one core between two daemons', async t => {
+  const { clients, servers, cleanup } = await createMany(2)
 
-  const store1 = stores[0]
-  const store2 = stores[1]
+  const client1 = clients[0]
+  const client2 = clients[1]
 
-  const core1 = store1.get()
+  const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await store1.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
-  const core2 = store2.get(core1.key)
+  const core2 = client2.corestore.get(core1.key)
   await core2.ready()
-  await store2.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+  await client2.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
   const block = await core2.get(0)
   t.same(block.toString('utf8'), 'hello world')
 
@@ -23,25 +23,25 @@ test('can replicate one core between two daemons', async t => {
 })
 
 test('announced discovery key is rejoined on restart', async t => {
-  const { bootstrapOpt, stores, servers, cleanup, dirs } = await createMany(2)
+  const { bootstrapOpt, clients, servers, cleanup, dirs } = await createMany(2)
 
-  var store1 = stores[0]
+  var client1 = clients[0]
   var server1 = servers[0]
-  const store2 = stores[1]
+  const client2 = clients[1]
 
-  const core1 = store1.get()
+  const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await store1.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
+  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
   await server1.close()
   const newServer = await createOne({ dir: dirs[0], bootstrap: bootstrapOpt })
-  store1 = newServer.store
+  client1 = newServer.client
   server1 = newServer.server
 
-  const core2 = store2.get(core1.key)
+  const core2 = client2.corestore.get(core1.key)
   await core2.ready()
-  await store2.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+  await client2.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
   const block = await core2.get(0)
   t.same(block.toString('utf8'), 'hello world')
 
@@ -51,19 +51,19 @@ test('announced discovery key is rejoined on restart', async t => {
 })
 
 test('peers are set on a remote hypercore', async t => {
-  const { stores, servers, cleanup } = await createMany(5)
+  const { clients, servers, cleanup } = await createMany(5)
   const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
 
-  const store1 = stores[0]
-  const core1 = store1.get()
+  const client1 = clients[0]
+  const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await store1.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   // Create 4 more peers, and each one should only connect to the first.
   for (let i = 1; i < stores.length; i++) {
-    const store = stores[i]
-    const core = store.get(core1.key)
+    const client = clients[i]
+    const core = client.corestore.get(core1.key)
     await core.ready()
     let peerAddProm = new Promise(resolve => {
       let opened = 0
@@ -77,7 +77,7 @@ test('peers are set on a remote hypercore', async t => {
       }
       core.on('peer-open', openedListener)
     })
-    await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+    await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
     await peerAddProm
   }
 
@@ -87,12 +87,12 @@ test('peers are set on a remote hypercore', async t => {
 
 test('can get a stored network configuration', async t => {
   // TODO: Figure out DHT error when doing a swarm join with bootstrap: false
-  const { stores, servers, cleanup } = await createMany(1)
-  const store = stores[0]
+  const { clients, servers, cleanup } = await createMany(1)
+  const client = clients[0]
 
-  const core = store.get()
+  const core = client.corestore.get()
   await core.ready()
-  await store.configureNetwork(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
+  await client.network.configureNetwork(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
   const config = await store.getNetworkConfiguration(core.discoveryKey)
   t.true(config.discoveryKey.equals(core.discoveryKey))
@@ -104,14 +104,14 @@ test('can get a stored network configuration', async t => {
 })
 
 test('can get a transient network configuration', async t => {
-  const { stores, servers, cleanup } = await createMany(1)
-  const store = stores[0]
+  const { clients, servers, cleanup } = await createMany(1)
+  const client = clients[0]
 
-  const core = store.get()
+  const core = client.corestore.get()
   await core.ready()
-  await store.configureNetwork(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
+  await client.network.configureNetwork(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
 
-  const config = await store.getNetworkConfiguration(core.discoveryKey)
+  const config = await client.network.getNetworkConfiguration(core.discoveryKey)
   t.true(config.discoveryKey.equals(core.discoveryKey))
   t.false(config.announce)
   t.true(config.lookup)
@@ -121,21 +121,21 @@ test('can get a transient network configuration', async t => {
 })
 
 test('can get all network configurations', async t => {
-  const { stores, servers, cleanup } = await createMany(1)
-  const store = stores[0]
+  const { clients, servers, cleanup } = await createMany(1)
+  const client = clients[0]
 
-  const core1 = store.get()
-  const core2 = store.get()
-  const core3 = store.get()
+  const core1 = client.corestore.get()
+  const core2 = client.corestore.get()
+  const core3 = client.corestore.get()
   await core1.ready()
   await core2.ready()
   await core3.ready()
 
-  await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
-  await store.configureNetwork(core2.discoveryKey, { announce: false, lookup: true, flush: true, remember: true })
-  await store.configureNetwork(core3.discoveryKey, { announce: true, lookup: true, flush: true, remember: false })
+  await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
+  await client.network.configureNetwork(core2.discoveryKey, { announce: false, lookup: true, flush: true, remember: true })
+  await client.network.configureNetwork(core3.discoveryKey, { announce: true, lookup: true, flush: true, remember: false })
 
-  const configs = await store.getAllNetworkConfigurations()
+  const configs = await client.network.getAllNetworkConfigurations()
   t.same(configs.length, 3)
   let remembers = 0
   let announces = 0
@@ -154,15 +154,15 @@ test('can get all network configurations', async t => {
   t.end()
 })
 
-test.only('can get swarm-level networking events', async t => {
-  const { stores, servers, cleanup } = await createMany(5)
+test.skip('can get swarm-level networking events', async t => {
+  const { clients, servers, cleanup } = await createMany(5)
   const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
 
-  const store1 = stores[0]
-  const core1 = store1.get()
+  const client1 = clients[0]
+  const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await store1.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   let opened = 0
   let closed = 0
@@ -172,23 +172,23 @@ test.only('can get swarm-level networking events', async t => {
       if (++opened === 4) return resolve()
       return null
     }
-    store1.on('peer-open', openListener)
+    client1.network.on('peer-open', openListener)
   })
   const closeProm = new Promise(resolve => {
-    const removeListener = peer => {
+    const removeListener = (peer) => {
       console.log('PEER REMOVED:', peer)
       if (++closed === 4) return resolve()
       return null
     }
-    store1.on('peer-remove', removeListener)
+    client1.network.on('peer-remove', removeListener)
   })
 
   // Create 4 more peers, and each one should only connect to the first.
-  for (let i = 1; i < stores.length; i++) {
-    const store = stores[i]
-    const core = store.get(core1.key)
+  for (let i = 1; i < clients.length; i++) {
+    const client = clients[i]
+    const core = client.corestore.get(core1.key)
     await core.ready()
-    await store.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+    await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
   }
 
   for (let i = 1; i < stores.length; i++) {
