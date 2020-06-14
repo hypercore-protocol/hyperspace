@@ -241,6 +241,7 @@ class RemoteHypercore extends Nanoresource {
   // Private Methods
 
   async _append (blocks) {
+    if (!this.opened) await this.open()
     if (!Array.isArray(blocks)) blocks = [blocks]
     if (this.valueEncoding) blocks = blocks.map(b => this.valueEncoding.encode(b))
     const rsp = await this._client.hypercore.append({
@@ -251,6 +252,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _get (seq, opts) {
+    if (!this.opened) await this.open()
     const rsp = await this._client.hypercore.get({
       ...opts,
       seq,
@@ -262,7 +264,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _update (opts) {
-    await this.ready()
+    if (!this.opened) await this.open()
     if (typeof opts === 'number') opts = { minLength: opts }
     if (typeof opts.minLength !== 'number') opts.minLength = this.length + 1
     return this._client.hypercore.update({
@@ -272,6 +274,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _seek (byteOffset, opts) {
+    if (!this.opened) await this.open()
     const rsp = await this._client.hypercore.seek({
       byteOffset,
       ...opts,
@@ -284,11 +287,22 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _has (seq) {
+    if (!this.opened) await this.open()
     const rsp = await this._client.hypercore.has({
       seq,
       id: this._id
     })
     return rsp.has
+  }
+
+  async _download (range, resourceId) {
+    if (!this.opened) await this.open()
+    return this._client.hypercore.download({ ...range, id: this._id, resourceId })
+  }
+
+  async _undownload (resourceId) {
+    if (!this.opened) await this.open()
+    return this._client.hypercore.undownload({ id: this._id, resourceId })
   }
 
   // Public Methods
@@ -355,7 +369,7 @@ class RemoteHypercore extends Nanoresource {
 
     const resourceId = this._sessions.createResourceId()
 
-    const prom = this._client.hypercore.download({ ...range, id: this._id, resourceId })
+    const prom = this._download(range, resourceId)
     prom.catch(noop) // optional promise due to the hypercore signature
     prom.resourceId = resourceId
 
@@ -365,12 +379,15 @@ class RemoteHypercore extends Nanoresource {
 
   undownload (dl, cb) {
     if (typeof dl.resourceId !== 'number') throw new Error('Must pass a download return value')
-    const prom = this._client.hypercore.undownload({ id: this._id, resourceId: dl.resourceId })
+    const prom = this._undownload(dl.resourceId)
     prom.catch(noop) // optional promise due to the hypercore signature
     return maybe(cb, prom)
   }
 
   lock (onlocked) {
+    // TODO: refactor so this can be opened without waiting for open
+    if (!this.opened) throw new Error('Cannot aquire a lock for an unopened feed')
+
     const prom = this._client.hypercore.aquireLock({ id: this._id })
 
     if (onlocked) {

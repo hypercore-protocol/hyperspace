@@ -265,6 +265,7 @@ test('can lock and release', async t => {
   const { server, client, cleanup } = await createOne()
 
   const core1 = client.corestore.get()
+  await core1.ready()
 
   const release = await core1.lock()
 
