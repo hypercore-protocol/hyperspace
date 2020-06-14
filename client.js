@@ -323,7 +323,7 @@ class RemoteHypercore extends Nanoresource {
   // Public Methods
 
   append (blocks, cb) {
-    return maybe(cb, this._append(blocks))
+    return maybeOptional(cb, this._append(blocks))
   }
 
   get (seq, opts, cb) {
@@ -335,7 +335,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   update (opts, cb) {
-    return maybe(cb, this._update(opts))
+    return maybeOptional(cb, this._update(opts))
   }
 
   seek (byteOffset, opts, cb) {
@@ -394,9 +394,7 @@ class RemoteHypercore extends Nanoresource {
 
   undownload (dl, cb) {
     if (typeof dl.resourceId !== 'number') throw new Error('Must pass a download return value')
-    const prom = this._undownload(dl.resourceId)
-    prom.catch(noop) // optional promise due to the hypercore signature
-    return maybe(cb, prom)
+    return maybeOptional(cb, this._undownload(dl.resourceId))
   }
 
   lock (onlocked) {
@@ -459,3 +457,9 @@ module.exports = class HyperspaceClient extends Nanoresource {
 }
 
 function noop () {}
+
+function maybeOptional (cb, prom) {
+  prom = maybe(cb, prom)
+  if (prom) prom.catch(noop)
+  return prom
+}
