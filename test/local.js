@@ -87,6 +87,26 @@ test('update with current length returns', async t => {
   t.end()
 })
 
+test('appending many large blocks works', async t => {
+  const { server, client, cleanup } = await createOne()
+
+  const core = client.corestore.get()
+  await core.ready()
+
+  const NUM_BLOCKS = 200
+  const BLOCK_SIZE = 1e5
+
+  const bufs = (new Array(NUM_BLOCKS).fill(0)).map(() => {
+    return Buffer.allocUnsafe(BLOCK_SIZE)
+  })
+  let seq = await core.append(bufs)
+  t.same(seq, 0)
+  t.same(core.byteLength, NUM_BLOCKS * BLOCK_SIZE)
+
+  await cleanup()
+  t.end()
+})
+
 test('seek works correctly', async t => {
   const { server, client, cleanup } = await createOne()
 
