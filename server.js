@@ -96,6 +96,7 @@ module.exports = class Hyperspace extends Nanoresource {
       const flushSet = new Set()
       var globalFlushed = false
 
+      if (!this.networker.swarm) return
       this.networker.swarm.flush(() => {
         if (this.networker.joined(discoveryKey)) return
         globalFlushed = true

@@ -124,6 +124,10 @@ message UndownloadRequest {
   required uint64 resourceId = 2;
 }
 
+message LockRequest {
+  required uint64 id = 1;
+}
+
 // Hypercore Events
 
 message AppendEvent {
@@ -161,6 +165,9 @@ service Hypercore {
   rpc Download (DownloadRequest) returns (Void);
   rpc Undownload (UndownloadRequest) returns (Void);
   rpc Close (CloseRequest) returns (Void);
+
+  rpc AquireLock (LockRequest) returns (Void);
+  rpc ReleaseLock (LockRequest) returns (Void);
 
   // Events
   rpc OnAppend (AppendEvent) returns (Void);

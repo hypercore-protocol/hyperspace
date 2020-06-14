@@ -261,6 +261,27 @@ test('corestore feed event fires', async t => {
   }
 })
 
+test('can lock and release', async t => {
+  const { server, client, cleanup } = await createOne()
+
+  const core1 = client.corestore.get()
+
+  const release = await core1.lock()
+
+  let unlocked = false
+  const other = core1.lock()
+
+  t.pass('locked')
+  other.then(() => t.ok(unlocked))
+  await new Promise(resolve => setTimeout(resolve, 500))
+
+  release()
+  unlocked = true
+  await other
+  await cleanup()
+  t.end()
+})
+
 test('can run a hypertrie on remote hypercore', async t => {
   const { server, client, cleanup } = await createOne()
 

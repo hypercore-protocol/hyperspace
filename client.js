@@ -48,7 +48,7 @@ class RemoteCorestore extends EventEmitter {
       onClose ({ id }) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
-        remoteCore._onclose()
+        remoteCore.close(() => {}) // no unhandled rejects
       },
       onPeerOpen ({ id, peer }) {
         const remoteCore = this._sessions.get(id)
@@ -76,7 +76,6 @@ class RemoteCorestore extends EventEmitter {
   }
 
   // Public Methods
-
 
   replicate () {
     throw new Error('Cannot call replicate on a RemoteCorestore')
@@ -176,11 +175,9 @@ class RemoteHypercore extends Nanoresource {
     this._client = client
     this._sessions = sessions
     this._name = opts.name
+    this._id = this.lazy ? undefined : this._sessions.create(this)
 
-    if (!this.lazy) {
-      this._id = this._sessions.create(this)
-      this.ready(() => {})
-    }
+    if (!this.lazy) this.ready(() => {})
   }
 
   ready (cb) {
@@ -218,10 +215,6 @@ class RemoteHypercore extends Nanoresource {
     this.length = rsp.length
     this.byteLength = rsp.byteLength
     this.emit('append')
-  }
-
-  _onclose (rsp) {
-    this.emit('close')
   }
 
   _onpeeropen (peer) {
@@ -375,6 +368,22 @@ class RemoteHypercore extends Nanoresource {
     const prom = this._client.hypercore.undownload({ id: this._id, resourceId: dl.resourceId })
     prom.catch(noop) // optional promise due to the hypercore signature
     return maybe(cb, prom)
+  }
+
+  lock (onlocked) {
+    const prom = this._client.hypercore.aquireLock({ id: this._id })
+
+    if (onlocked) {
+      const release = (cb, err, val) => { // mutexify interface
+        this._client.hypercore.releaseLockNoReply({ id: this._id })
+        if (cb) cb(err, val)
+      }
+
+      prom.then(() => process.nextTick(onlocked, release)).catch(noop)
+      return
+    }
+
+    return prom.then(() => () => this._client.hypercore.releaseLockNoReply({ id: this._id }))
   }
 
   // TODO: Unimplemented methods
