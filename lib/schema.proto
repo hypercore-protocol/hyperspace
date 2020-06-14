@@ -137,8 +137,8 @@ message AppendEvent {
 }
 
 message PeerEvent {
-  required Peer peer = 1;
-  required uint64 id = 2;
+  required uint64 id = 1;
+  required Peer peer = 2;
 }
 
 message CloseEvent {

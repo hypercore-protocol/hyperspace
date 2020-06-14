@@ -228,9 +228,10 @@ class RemoteHypercore extends Nanoresource {
     let idx = -1
     for (let i = 0; i < this.peers.length; i++) {
       let p = this.peers[i]
-      if (p.id === peer.id) {
+      if (peer.remotePublicKey.equals(p.remotePublicKey)) {
         remotePeer = p
         idx = i
+        break
       }
     }
     if (idx === -1) throw new Error('A peer was removed that was not previously added.')
@@ -242,6 +243,8 @@ class RemoteHypercore extends Nanoresource {
 
   async _append (blocks) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     if (!Array.isArray(blocks)) blocks = [blocks]
     if (this.valueEncoding) blocks = blocks.map(b => this.valueEncoding.encode(b))
     const rsp = await this._client.hypercore.append({
@@ -253,6 +256,8 @@ class RemoteHypercore extends Nanoresource {
 
   async _get (seq, opts) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     const rsp = await this._client.hypercore.get({
       ...opts,
       seq,
@@ -265,6 +270,8 @@ class RemoteHypercore extends Nanoresource {
 
   async _update (opts) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     if (typeof opts === 'number') opts = { minLength: opts }
     if (typeof opts.minLength !== 'number') opts.minLength = this.length + 1
     return this._client.hypercore.update({
@@ -275,6 +282,8 @@ class RemoteHypercore extends Nanoresource {
 
   async _seek (byteOffset, opts) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     const rsp = await this._client.hypercore.seek({
       byteOffset,
       ...opts,
@@ -288,6 +297,8 @@ class RemoteHypercore extends Nanoresource {
 
   async _has (seq) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     const rsp = await this._client.hypercore.has({
       seq,
       id: this._id
@@ -297,11 +308,15 @@ class RemoteHypercore extends Nanoresource {
 
   async _download (range, resourceId) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     return this._client.hypercore.download({ ...range, id: this._id, resourceId })
   }
 
   async _undownload (resourceId) {
     if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+
     return this._client.hypercore.undownload({ id: this._id, resourceId })
   }
 
