@@ -21,6 +21,7 @@ message OpenResponse {
   required uint64 length = 3;
   required uint64 byteLength = 4;
   required bool writable = 5;
+  repeated Peer peers = 6;
 }
 
 // Corestore Events

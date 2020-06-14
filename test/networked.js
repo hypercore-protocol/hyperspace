@@ -201,3 +201,40 @@ test('can get swarm-level networking events', async t => {
   await cleanup()
   t.end()
 })
+
+test('an existing core is opened with peers', async t => {
+  const { clients, servers, cleanup } = await createMany(5)
+
+  const client1 = clients[0]
+  const core1 = client1.corestore.get()
+  await core1.ready()
+  await core1.append(Buffer.from('hello world', 'utf8'))
+  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+
+  let opened = 0
+  const openProm = new Promise(resolve => {
+    const openListener = peer => {
+      if (++opened === 4) return resolve()
+      return null
+    }
+    client1.network.on('peer-open', openListener)
+  })
+
+  // Create 4 more peers, and each one should only connect to the first.
+  for (let i = 1; i < clients.length; i++) {
+    const client = clients[i]
+    const core = client.corestore.get(core1.key)
+    await core.ready()
+    await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+  }
+
+  await openProm
+
+  const core2 = client1.corestore.get(core1.key)
+  await core2.ready()
+  // Peers should be set immediately after ready.
+  t.same(core2.peers.length, 4)
+
+  await cleanup()
+  t.end()
+})

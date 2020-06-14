@@ -202,6 +202,7 @@ class RemoteHypercore extends Nanoresource {
     this.writable = rsp.writable
     this.length = rsp.length
     this.byteLength = rsp.byteLength
+    if (rsp.peers) this.peers = rsp.peers
     this.emit('ready')
   }
 
