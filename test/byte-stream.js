@@ -4,15 +4,15 @@
 const tape = require('tape')
 const ram = require('random-access-memory')
 const byteStream = require('hypercore-byte-stream')
-const RemoteCorestore = require('../client')
+const HyperspaceClient = require('../client')
 const HyperspaceServer = require('../server')
 
 let server = null
-let store = null
+let client = null
 let cleanup = null
 
 function createLocal (numRecords, recordSize, cb) {
-  const core = store.get()
+  const core = client.corestore.get()
 
   const records = []
   for (let i = 0; i < numRecords; i++) {
@@ -33,12 +33,12 @@ tape('start', async function (t) {
   server = new HyperspaceServer({ storage: ram })
   await server.ready()
 
-  store = new RemoteCorestore()
-  await store.ready()
+  client = new HyperspaceClient()
+  await client.ready()
 
   cleanup = () => Promise.all([
     server.close(),
-    store.close()
+    client.close()
   ])
 
   t.end()
@@ -46,8 +46,7 @@ tape('start', async function (t) {
 
 require('hypercore-byte-stream/test/basic')
 
-tape('end', function (t) {
-  server.close()
-  store.close()
+tape('end', async function (t) {
+  await cleanup()
   t.end()
 })

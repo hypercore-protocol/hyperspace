@@ -6,15 +6,15 @@ const hypertrie = require('hypertrie')
 const ram = require('random-access-memory')
 const Readable = require('stream').Readable
 
-const RemoteCorestore = require('../client')
+const HyperspaceClient = require('../client')
 const HyperspaceServer = require('../server')
 
 let server = null
-let store = null
+let client = null
 let cleanup = null
 
 function create (key, opts) {
-  const feed = store.get(key)
+  const feed = client.corestore.get(key)
   return hypertrie(null, null, {
     valueEncoding: 'json',
     ...opts,
@@ -29,12 +29,12 @@ tape('start', async function (t) {
   server = new HyperspaceServer({ storage: ram })
   await server.ready()
 
-  store = new RemoteCorestore()
-  await store.ready()
+  client = new HyperspaceClient()
+  await client.ready()
 
   cleanup = () => Promise.all([
     server.close(),
-    store.close()
+    client.close()
   ])
 
   t.end()
@@ -49,9 +49,8 @@ require('hypertrie/test/history')
 require('hypertrie/test/closest')
 require('hypertrie/test/deletes')
 
-tape('end', function (t) {
-  server.close()
-  store.close()
+tape('end', async function (t) {
+  await cleanup()
   t.end()
 })
 

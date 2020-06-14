@@ -1,7 +1,7 @@
 const test = require('tape')
 const { createOne, createMany } = require('./helpers/create')
 
-test.only('can replicate one core between two daemons', async t => {
+test('can replicate one core between two daemons', async t => {
   const { clients, servers, cleanup } = await createMany(2)
 
   const client1 = clients[0]
@@ -61,7 +61,7 @@ test('peers are set on a remote hypercore', async t => {
   await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   // Create 4 more peers, and each one should only connect to the first.
-  for (let i = 1; i < stores.length; i++) {
+  for (let i = 1; i < clients.length; i++) {
     const client = clients[i]
     const core = client.corestore.get(core1.key)
     await core.ready()
@@ -94,7 +94,7 @@ test('can get a stored network configuration', async t => {
   await core.ready()
   await client.network.configureNetwork(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
-  const config = await store.getNetworkConfiguration(core.discoveryKey)
+  const config = await client.network.getNetworkConfiguration(core.discoveryKey)
   t.true(config.discoveryKey.equals(core.discoveryKey))
   t.true(config.announce)
   t.true(config.lookup)
@@ -154,7 +154,7 @@ test('can get all network configurations', async t => {
   t.end()
 })
 
-test.skip('can get swarm-level networking events', async t => {
+test('can get swarm-level networking events', async t => {
   const { clients, servers, cleanup } = await createMany(5)
   const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
 
@@ -168,7 +168,6 @@ test.skip('can get swarm-level networking events', async t => {
   let closed = 0
   const openProm = new Promise(resolve => {
     const openListener = peer => {
-      console.log('PEER OPENED:', peer)
       if (++opened === 4) return resolve()
       return null
     }
@@ -176,7 +175,6 @@ test.skip('can get swarm-level networking events', async t => {
   })
   const closeProm = new Promise(resolve => {
     const removeListener = (peer) => {
-      console.log('PEER REMOVED:', peer)
       if (++closed === 4) return resolve()
       return null
     }
@@ -191,11 +189,14 @@ test.skip('can get swarm-level networking events', async t => {
     await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
   }
 
-  for (let i = 1; i < stores.length; i++) {
+  await openProm
+
+  for (let i = 1; i < servers.length; i++) {
     await servers[i].close()
   }
 
-  await Promise.all([openProm, closeProm])
+  await closeProm
+
   t.pass('all open/remove events were fired')
   await cleanup()
   t.end()

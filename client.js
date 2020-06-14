@@ -1,3 +1,4 @@
+const { EventEmitter } = require('events')
 const maybe = require('call-me-maybe')
 const codecs = require('codecs')
 const hypercoreCrypto = require('hypercore-crypto')
@@ -31,7 +32,7 @@ class Sessions {
   }
 }
 
-class RemoteCorestore extends Nanoresource {
+class RemoteCorestore extends EventEmitter {
   constructor (opts = {}) {
     super()
     this._client = opts.client
@@ -105,10 +106,17 @@ class RemoteCorestore extends Nanoresource {
   ready (cb) {
     return process.nextTick(cb, null)
   }
+
+  close (cb) {
+    // TODO: This is a noop for now, but in the future it should send a signal to the daemon to close cores.
+    // Closing the top-level client will close the cores (so resource management is still handled).
+    return process.nextTick(cb, null)
+  }
 }
 
-class RemoteNetworker {
+class RemoteNetworker extends EventEmitter {
   constructor (opts) {
+    super()
     this._client = opts.client
     this.publicKey = null
 
