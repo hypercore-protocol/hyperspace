@@ -5,7 +5,7 @@ const hyperdrive = require('hyperdrive')
 const { createOne } = require('./helpers/create')
 
 test('can open a core', async t => {
-  const { client, server, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
@@ -20,7 +20,7 @@ test('can open a core', async t => {
 })
 
 test('can get a block', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
@@ -34,7 +34,7 @@ test('can get a block', async t => {
 })
 
 test('length/byteLength update correctly on append', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
@@ -62,13 +62,13 @@ test('length/byteLength update correctly on append', async t => {
 })
 
 test('update with current length returns', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
-  let seq = await core.append(buf)
+  const seq = await core.append(buf)
   t.same(seq, 0)
   t.same(core.byteLength, buf.length)
   t.same(core.length, 1)
@@ -88,7 +88,7 @@ test('update with current length returns', async t => {
 })
 
 test('appending many large blocks works', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
@@ -99,7 +99,7 @@ test('appending many large blocks works', async t => {
   const bufs = (new Array(NUM_BLOCKS).fill(0)).map(() => {
     return Buffer.allocUnsafe(BLOCK_SIZE)
   })
-  let seq = await core.append(bufs)
+  const seq = await core.append(bufs)
   t.same(seq, 0)
   t.same(core.byteLength, NUM_BLOCKS * BLOCK_SIZE)
 
@@ -108,7 +108,7 @@ test('appending many large blocks works', async t => {
 })
 
 test('seek works correctly', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
@@ -117,19 +117,19 @@ test('seek works correctly', async t => {
   await core.append([buf, buf])
 
   {
-    let { seq, blockOffset } = await core.seek(0)
+    const { seq, blockOffset } = await core.seek(0)
     t.same(seq, 0)
     t.same(blockOffset, 0)
   }
 
   {
-    let { seq, blockOffset } = await core.seek(5)
+    const { seq, blockOffset } = await core.seek(5)
     t.same(seq, 0)
     t.same(blockOffset, 5)
   }
 
   {
-    let { seq, blockOffset } = await core.seek(15)
+    const { seq, blockOffset } = await core.seek(15)
     t.same(seq, 1)
     t.same(blockOffset, 4)
   }
@@ -139,13 +139,13 @@ test('seek works correctly', async t => {
 })
 
 test('has works correctly', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
-  let seq = await core.append(buf)
+  await core.append(buf)
 
   const doesHave = await core.has(0)
   const doesNotHave = await core.has(1)
@@ -158,13 +158,13 @@ test('has works correctly', async t => {
 })
 
 test('download works correctly', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
-  let seq = await core.append(buf)
+  await core.append(buf)
 
   for (let i = 0; i < 3; i++) {
     const prom = core.download({ start: 0, end: 10 })
@@ -183,7 +183,7 @@ test('download works correctly', async t => {
 })
 
 test('valueEncodings work', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get({ valueEncoding: 'utf8' })
   await core.ready()
@@ -197,7 +197,7 @@ test('valueEncodings work', async t => {
 })
 
 test('corestore default get works', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const ns1 = client.corestore.namespace('blah')
   const ns2 = client.corestore.namespace('blah2')
@@ -226,7 +226,7 @@ test('corestore default get works', async t => {
 })
 
 test('weak references work', async t => {
-  const { client, server, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core1 = client.corestore.get()
   await core1.ready()
@@ -247,7 +247,7 @@ test('weak references work', async t => {
 })
 
 test('corestore feed event fires', async t => {
-  const { client, server, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const emittedFeeds = []
   const emittedProm = new Promise(resolve => {
@@ -282,7 +282,7 @@ test('corestore feed event fires', async t => {
 })
 
 test('can lock and release', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core1 = client.corestore.get()
   await core1.ready()
@@ -304,7 +304,7 @@ test('can lock and release', async t => {
 })
 
 test('can run a hypertrie on remote hypercore', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.default()
   await core.ready()
@@ -333,7 +333,7 @@ test('can run a hypertrie on remote hypercore', async t => {
 })
 
 test('can run a hyperdrive on a remote hypercore', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const drive = hyperdrive(client.corestore, null, {
     extension: false,

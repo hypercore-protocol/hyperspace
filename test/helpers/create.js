@@ -3,7 +3,6 @@ const dht = require('@hyperswarm/dht')
 const HyperspaceClient = require('../../client')
 const HyperspaceServer = require('../../server')
 
-const BASE_PORT = 4101
 const BOOTSTRAP_PORT = 3106
 const BOOTSTRAP_URL = `localhost:${BOOTSTRAP_PORT}`
 

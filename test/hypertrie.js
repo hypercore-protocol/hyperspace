@@ -4,7 +4,6 @@
 const tape = require('tape')
 const hypertrie = require('hypertrie')
 const ram = require('random-access-memory')
-const Readable = require('stream').Readable
 
 const HyperspaceClient = require('../client')
 const HyperspaceServer = require('../server')
@@ -53,4 +52,3 @@ tape('end', async function (t) {
   await cleanup()
   t.end()
 })
-

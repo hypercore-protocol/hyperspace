@@ -2,7 +2,7 @@ const test = require('tape')
 const { createOne, createMany } = require('./helpers/create')
 
 test('can replicate one core between two daemons', async t => {
-  const { clients, servers, cleanup } = await createMany(2)
+  const { clients, cleanup } = await createMany(2)
 
   const client1 = clients[0]
   const client2 = clients[1]
@@ -65,7 +65,7 @@ test('peers are set on a remote hypercore', async t => {
     const client = clients[i]
     const core = client.corestore.get(core1.key)
     await core.ready()
-    let peerAddProm = new Promise(resolve => {
+    const peerAddProm = new Promise(resolve => {
       let opened = 0
       const openedListener = peer => {
         t.true(peer.remotePublicKey.equals(firstPeerRemoteKey))
@@ -87,7 +87,7 @@ test('peers are set on a remote hypercore', async t => {
 
 test('can get a stored network configuration', async t => {
   // TODO: Figure out DHT error when doing a swarm join with bootstrap: false
-  const { clients, servers, cleanup } = await createMany(1)
+  const { clients, cleanup } = await createMany(1)
   const client = clients[0]
 
   const core = client.corestore.get()
@@ -104,7 +104,7 @@ test('can get a stored network configuration', async t => {
 })
 
 test('can get a transient network configuration', async t => {
-  const { clients, servers, cleanup } = await createMany(1)
+  const { clients, cleanup } = await createMany(1)
   const client = clients[0]
 
   const core = client.corestore.get()
@@ -121,7 +121,7 @@ test('can get a transient network configuration', async t => {
 })
 
 test('can get all network configurations', async t => {
-  const { clients, servers, cleanup } = await createMany(1)
+  const { clients, cleanup } = await createMany(1)
   const client = clients[0]
 
   const core1 = client.corestore.get()
@@ -140,7 +140,7 @@ test('can get all network configurations', async t => {
   let remembers = 0
   let announces = 0
   let lookups = 0
-  for (let config of configs) {
+  for (const config of configs) {
     if (config.remember) remembers++
     if (config.announce) announces++
     if (config.lookup) lookups++
@@ -156,7 +156,6 @@ test('can get all network configurations', async t => {
 
 test('can get swarm-level networking events', async t => {
   const { clients, servers, cleanup } = await createMany(5)
-  const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
 
   const client1 = clients[0]
   const core1 = client1.corestore.get()
@@ -203,7 +202,7 @@ test('can get swarm-level networking events', async t => {
 })
 
 test('an existing core is opened with peers', async t => {
-  const { clients, servers, cleanup } = await createMany(5)
+  const { clients, cleanup } = await createMany(5)
 
   const client1 = clients[0]
   const core1 = client1.corestore.get()

@@ -1,10 +1,8 @@
 const Corestore = require('corestore')
 const Networker = require('corestore-swarm-networking')
-const hypertrie = require('hypertrie')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('./lib/rpc')
-const messages = require('./lib/messages')
 const HyperspaceDb = require('./lib/db')
 const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
@@ -130,10 +128,8 @@ module.exports = class Hyperspace extends Nanoresource {
     })
   }
 
-
   _onConnection (client) {
     const sessionState = new SessionState(this.references)
-    const resources = new Map()
 
     client.on('close', () => {
       sessionState.deleteAll()
@@ -150,14 +146,4 @@ function callAllInSet (set) {
     cb()
   }
   set.clear()
-}
-
-function keyToString (key) {
-  if (typeof key === 'string') return key
-  return key.toString('hex')
-}
-
-function keyFromString (key) {
-  if (Buffer.isBuffer(key)) return key
-  return Buffer.from(key, 'hex')
 }

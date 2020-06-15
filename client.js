@@ -15,18 +15,22 @@ class Sessions {
     this._freeList = []
     this._remoteCores = new Map()
   }
+
   create (remoteCore) {
     const id = this._freeList.length ? this._freeList.pop() : this._counter++
     this._remoteCores.set(id, remoteCore)
     return id
   }
+
   createResourceId () {
     return this._resourceCounter++
   }
+
   delete (id) {
     this._remoteCores.delete(id)
     this._freeList.push(id)
   }
+
   get (id) {
     return this._remoteCores.get(id)
   }
@@ -40,7 +44,7 @@ class RemoteCorestore extends EventEmitter {
     this._sessions = opts.sessions || new Sessions()
 
     this._client.hypercore.onRequest(this, {
-      onAppend ({ id, length, byteLength}) {
+      onAppend ({ id, length, byteLength }) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onappend({ length, byteLength })
@@ -60,10 +64,10 @@ class RemoteCorestore extends EventEmitter {
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onpeerremove(peer)
       },
-      onExtension ({ id, resourceId, remotePublicKey, data}) {
+      onExtension ({ id, resourceId, remotePublicKey, data }) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
-        remoteCore._onextension({ resourceId, remotePublicKey, data})
+        remoteCore._onextension({ resourceId, remotePublicKey, data })
       }
     })
     this._client.corestore.onRequest(this, {
@@ -103,7 +107,7 @@ class RemoteCorestore extends EventEmitter {
     return new this.constructor({
       client: this._client,
       sessions: this._sessions,
-      name,
+      name
     })
   }
 
@@ -140,7 +144,7 @@ class RemoteNetworker extends EventEmitter {
         discoveryKey,
         announce: opts.announce !== false,
         lookup: opts.lookup !== false,
-        remember: opts.remember,
+        remember: opts.remember
       },
       flush: opts.flush
     })
@@ -377,7 +381,7 @@ class RemoteHypercore extends Nanoresource {
   }
 
   download (range, cb) {
-    if (typeof range === 'number') range = { start: range, end: range + 1}
+    if (typeof range === 'number') range = { start: range, end: range + 1 }
     if (Array.isArray(range)) range = { blocks: range }
 
     // much easier to run this in the client due to pbuf defaults
@@ -479,7 +483,6 @@ class RemoteExtension {
   }
 
   broadcast (message) {
-    const feed = this.feed
     const buf = this.encoding.encode(message)
     if (this.feed._id === undefined) return
     this.feed._client.hypercore.sendExtensionNoReply({
