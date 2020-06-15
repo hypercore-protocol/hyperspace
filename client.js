@@ -59,6 +59,11 @@ class RemoteCorestore extends EventEmitter {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onpeerremove(peer)
+      },
+      onExtension ({ id, resourceId, remotePublicKey, data}) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onextension({ resourceId, remotePublicKey, data})
       }
     })
     this._client.corestore.onRequest(this, {
@@ -176,6 +181,7 @@ class RemoteHypercore extends Nanoresource {
     this._sessions = sessions
     this._name = opts.name
     this._id = this.lazy ? undefined : this._sessions.create(this)
+    this._extensions = new Map()
 
     if (!this.lazy) this.ready(() => {})
   }
@@ -224,22 +230,30 @@ class RemoteHypercore extends Nanoresource {
   }
 
   _onpeerremove (peer) {
-    let remotePeer = null
-    let idx = -1
-    for (let i = 0; i < this.peers.length; i++) {
-      let p = this.peers[i]
-      if (peer.remotePublicKey.equals(p.remotePublicKey)) {
-        remotePeer = p
-        idx = i
-        break
-      }
-    }
+    const idx = this._indexOfPeer(peer.remotePublicKey)
     if (idx === -1) throw new Error('A peer was removed that was not previously added.')
+    const remotePeer = this.peers[idx]
     this.peers.splice(idx, 1)
     this.emit('peer-remove', remotePeer)
   }
 
+  _onextension ({ resourceId, remotePublicKey, data }) {
+    const idx = this._indexOfPeer(remotePublicKey)
+    if (idx === -1) return
+    const remotePeer = this.peers[idx]
+    const ext = this._extensions.get(resourceId)
+    ext.onmessage(data, remotePeer)
+  }
+
   // Private Methods
+
+  _indexOfPeer (remotePublicKey) {
+    for (let i = 0; i < this.peers.length; i++) {
+      if (remotePublicKey.equals(this.peers[i].remotePublicKey)) return i
+    }
+
+    return -1
+  }
 
   async _append (blocks) {
     if (!this.opened) await this.open()
@@ -418,7 +432,10 @@ class RemoteHypercore extends Nanoresource {
 
   // TODO: Unimplemented methods
 
-  registerExtension () {
+  registerExtension (name, opts) {
+    const ext = new RemoteExtension(this, name, opts)
+    this._extensions.set(ext.resourceId, ext)
+    return ext
   }
 
   replicate () {
@@ -431,6 +448,56 @@ class RemoteHypercorePeer {
     this.type = type
     this.remoteAddress = remoteAddress
     this.remotePublicKey = remotePublicKey
+  }
+}
+
+class RemoteExtension {
+  constructor (feed, name, opts = {}) {
+    this.resourceId = feed._sessions.createResourceId()
+    this.feed = feed
+    this.name = name
+    this.onmessage = opts.onmessage || noop
+    this.onerror = opts.onerror || noop
+    this.encoding = codecs((opts && opts.encoding) || 'binary')
+
+    const reg = () => {
+      this.feed._client.hypercore.registerExtensionNoReply({
+        id: this.feed._id,
+        resourceId: this.resourceId,
+        name: this.name
+      })
+    }
+
+    if (this.feed._id !== undefined) {
+      reg()
+    } else {
+      this.feed.ready((err) => {
+        if (err) return this.onerror(err)
+        reg()
+      })
+    }
+  }
+
+  broadcast (message) {
+    const feed = this.feed
+    const buf = this.encoding.encode(message)
+    if (this.feed._id === undefined) return
+    this.feed._client.hypercore.sendExtensionNoReply({
+      id: this.feed._id,
+      resourceId: this.resourceId,
+      remotePublicKey: null,
+      data: buf
+    })
+  }
+
+  send (message, peer) {
+    if (this.feed._id === undefined) return
+    this.feed._client.hypercore.sendExtensionNoReply({
+      id: this.feed._id,
+      resourceId: this.resourceId,
+      remotePublicKey: null,
+      data: message
+    })
   }
 }
 

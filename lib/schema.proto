@@ -128,6 +128,19 @@ message LockRequest {
   required uint64 id = 1;
 }
 
+message RegisterExtensionRequest {
+  required uint64 id = 1;
+  required uint64 resourceId = 2;
+  required string name = 3;
+}
+
+message ExtensionMessage {
+  required uint64 id = 1;
+  required uint64 resourceId = 2;
+  optional bytes remotePublicKey = 3;
+  required bytes data = 4;
+}
+
 // Hypercore Events
 
 message AppendEvent {
@@ -165,6 +178,8 @@ service Hypercore {
   rpc Download (DownloadRequest) returns (Void);
   rpc Undownload (UndownloadRequest) returns (Void);
   rpc Close (CloseRequest) returns (Void);
+  rpc RegisterExtension (RegisterExtensionRequest) returns (Void);
+  rpc SendExtension (ExtensionMessage) returns (Void);
 
   rpc AquireLock (LockRequest) returns (Void);
   rpc ReleaseLock (LockRequest) returns (Void);
@@ -174,6 +189,7 @@ service Hypercore {
   rpc OnClose (CloseEvent) returns (Void);
   rpc OnPeerOpen (PeerEvent) returns (Void);
   rpc OnPeerRemove (PeerEvent) returns (Void);
+  rpc OnExtension (ExtensionMessage) returns (Void);
 }
 
 service Network {
