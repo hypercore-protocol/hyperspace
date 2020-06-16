@@ -10,11 +10,11 @@ test('can replicate one core between two daemons', async t => {
   const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   const core2 = client2.corestore.get(core1.key)
   await core2.ready()
-  await client2.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+  await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   const block = await core2.get(0)
   t.same(block.toString('utf8'), 'hello world')
 
@@ -32,7 +32,7 @@ test('announced discovery key is rejoined on restart', async t => {
   const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
   await server1.close()
   const newServer = await createOne({ dir: dirs[0], bootstrap: bootstrapOpt })
@@ -41,7 +41,7 @@ test('announced discovery key is rejoined on restart', async t => {
 
   const core2 = client2.corestore.get(core1.key)
   await core2.ready()
-  await client2.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+  await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   const block = await core2.get(0)
   t.same(block.toString('utf8'), 'hello world')
 
@@ -58,7 +58,7 @@ test('peers are set on a remote hypercore', async t => {
   const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   // Create 4 more peers, and each one should only connect to the first.
   for (let i = 1; i < clients.length; i++) {
@@ -77,7 +77,7 @@ test('peers are set on a remote hypercore', async t => {
       }
       core.on('peer-open', openedListener)
     })
-    await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+    await client.network.configure(core1.discoveryKey, { announce: false, lookup: true })
     await peerAddProm
   }
 
@@ -92,9 +92,9 @@ test('can get a stored network configuration', async t => {
 
   const core = client.corestore.get()
   await core.ready()
-  await client.network.configureNetwork(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
+  await client.network.configure(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
-  const config = await client.network.getNetworkConfiguration(core.discoveryKey)
+  const config = await client.network.getConfiguration(core.discoveryKey)
   t.true(config.discoveryKey.equals(core.discoveryKey))
   t.true(config.announce)
   t.true(config.lookup)
@@ -109,9 +109,9 @@ test('can get a transient network configuration', async t => {
 
   const core = client.corestore.get()
   await core.ready()
-  await client.network.configureNetwork(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
+  await client.network.configure(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
 
-  const config = await client.network.getNetworkConfiguration(core.discoveryKey)
+  const config = await client.network.getConfiguration(core.discoveryKey)
   t.true(config.discoveryKey.equals(core.discoveryKey))
   t.false(config.announce)
   t.true(config.lookup)
@@ -131,11 +131,11 @@ test('can get all network configurations', async t => {
   await core2.ready()
   await core3.ready()
 
-  await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
-  await client.network.configureNetwork(core2.discoveryKey, { announce: false, lookup: true, flush: true, remember: true })
-  await client.network.configureNetwork(core3.discoveryKey, { announce: true, lookup: true, flush: true, remember: false })
+  await client.network.configure(core1.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
+  await client.network.configure(core2.discoveryKey, { announce: false, lookup: true, flush: true, remember: true })
+  await client.network.configure(core3.discoveryKey, { announce: true, lookup: true, flush: true, remember: false })
 
-  const configs = await client.network.getAllNetworkConfigurations()
+  const configs = await client.network.getAllConfigurations()
   t.same(configs.length, 3)
   let remembers = 0
   let announces = 0
@@ -161,7 +161,7 @@ test('can get swarm-level networking events', async t => {
   const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   let opened = 0
   let closed = 0
@@ -185,7 +185,7 @@ test('can get swarm-level networking events', async t => {
     const client = clients[i]
     const core = client.corestore.get(core1.key)
     await core.ready()
-    await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+    await client.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   }
 
   await openProm
@@ -208,7 +208,7 @@ test('an existing core is opened with peers', async t => {
   const core1 = client1.corestore.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
-  await client1.network.configureNetwork(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
   let opened = 0
   const openProm = new Promise(resolve => {
@@ -224,7 +224,7 @@ test('an existing core is opened with peers', async t => {
     const client = clients[i]
     const core = client.corestore.get(core1.key)
     await core.ready()
-    await client.network.configureNetwork(core1.discoveryKey, { announce: false, lookup: true })
+    await client.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   }
 
   await openProm

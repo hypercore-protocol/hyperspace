@@ -2,6 +2,7 @@ const { EventEmitter } = require('events')
 const maybe = require('call-me-maybe')
 const codecs = require('codecs')
 const hypercoreCrypto = require('hypercore-crypto')
+const inspect = require('inspect-custom-symbol')
 const { WriteStream, ReadStream } = require('hypercore-streams')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
@@ -91,7 +92,7 @@ class RemoteCorestore extends EventEmitter {
   }
 
   default (opts = {}) {
-    return this.get(null, { name: this._name })
+    return this.get(opts.key, { name: this._name })
   }
 
   get (key, opts = {}) {
@@ -138,28 +139,34 @@ class RemoteNetworker extends EventEmitter {
     })
   }
 
-  configureNetwork (discoveryKey, opts = {}) {
-    return this._client.network.configureNetwork({
+  configure (discoveryKey, opts = {}) {
+    return this._client.network.configure({
       configuration: {
         discoveryKey,
-        announce: opts.announce !== false,
-        lookup: opts.lookup !== false,
+        announce: opts.announce,
+        lookup: opts.lookup,
         remember: opts.remember
       },
-      flush: opts.flush
+      flush: opts.flush,
+      copyFrom: opts.copyFrom,
+      overwrite: opts.overwrite
     })
   }
 
-  async getNetworkConfiguration (discoveryKey) {
-    const rsp = await this._client.network.getNetworkConfiguration({
+  async getConfiguration (discoveryKey) {
+    const rsp = await this._client.network.getConfiguration({
       discoveryKey
     })
     return rsp.configuration
   }
 
-  async getAllNetworkConfigurations () {
-    const rsp = await this._client.network.getAllNetworkConfigurations()
+  async getAllConfigurations () {
+    const rsp = await this._client.network.getAllConfigurations()
     return rsp.configurations
+  }
+
+  listPeers () {
+    return this._client.network.listPeers()
   }
 }
 
@@ -192,6 +199,22 @@ class RemoteHypercore extends Nanoresource {
 
   ready (cb) {
     return maybe(cb, this.open())
+  }
+
+  [inspect] (depth, opts) {
+    var indent = ''
+    if (typeof opts.indentationLvl === 'number') {
+      while (indent.length < opts.indentationLvl) indent += ' '
+    }
+    return 'RemoteHypercore(\n' +
+      indent + '  key: ' + opts.stylize(this.key && this.key.toString('hex'), 'string') + '\n' +
+      indent + '  discoveryKey: ' + opts.stylize(this.discoveryKey && this.discoveryKey.toString('hex'), 'string') + '\n' +
+      indent + '  opened: ' + opts.stylize(this.opened, 'boolean') + '\n' +
+      indent + '  writable: ' + opts.stylize(this.writable, 'boolean') + '\n' +
+      indent + '  length: ' + opts.stylize(this.length, 'number') + '\n' +
+      indent + '  byteLength: ' + opts.stylize(this.byteLength, 'number') + '\n' +
+      indent + '  peers: ' + opts.stylize(this.peers.length, 'number') + '\n' +
+      indent + ')'
   }
 
   // Nanoresource Methods
@@ -338,6 +361,13 @@ class RemoteHypercore extends Nanoresource {
     return this._client.hypercore.undownload({ id: this._id, resourceId })
   }
 
+  async _downloaded (start, end) {
+    if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+    const rsp = await this._client.hypercore.downloaded({ id: this._id, start, end })
+    return rsp.bytes
+  }
+
   // Public Methods
 
   append (blocks, cb) {
@@ -413,6 +443,18 @@ class RemoteHypercore extends Nanoresource {
   undownload (dl, cb) {
     if (typeof dl.resourceId !== 'number') throw new Error('Must pass a download return value')
     return maybeOptional(cb, this._undownload(dl.resourceId))
+  }
+
+  downloaded (start, end, cb) {
+    if (typeof start === 'function') {
+      start = null
+      end = null
+      cb = start
+    } else if (typeof end === 'function') {
+      end = null
+      cb = end
+    }
+    return maybe(cb, this._downloaded(start, end))
   }
 
   lock (onlocked) {

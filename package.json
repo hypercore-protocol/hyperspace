@@ -31,6 +31,7 @@
     "hrpc-runtime": "^2.0.0",
     "hypercore-streams": "^1.0.0",
     "hypertrie": "^5.0.2",
+    "inspect-custom-symbol": "^1.1.1",
     "nanoresource-promise": "^1.2.2"
   },
   "devDependencies": {

@@ -42,6 +42,8 @@ message NetworkConfiguration {
 message ConfigureNetworkRequest {
   required NetworkConfiguration configuration = 1;
   optional bool flush = 2;
+  optional bytes copyFrom = 3;
+  optional bool overwrite = 4 [default = true];
 }
 
 message GetNetworkConfigurationRequest {
@@ -54,6 +56,10 @@ message GetNetworkConfigurationResponse {
 
 message GetAllNetworkConfigurationsResponse {
   repeated NetworkConfiguration configurations = 1;
+}
+
+message ListPeersResponse {
+  repeated Peer peers = 1;
 }
 
 // Hypercore Methods
@@ -119,6 +125,16 @@ message DownloadRequest {
   optional bool linear = 6;
 }
 
+message DownloadedRequest {
+  required uint64 id = 1;
+  optional uint64 start = 2;
+  optional uint64 end = 3;
+}
+
+message DownloadedResponse {
+  required uint64 bytes = 1;
+}
+
 message UndownloadRequest {
   required uint64 id = 1;
   required uint64 resourceId = 2;
@@ -176,6 +192,7 @@ service Hypercore {
   rpc Seek (SeekRequest) returns (SeekResponse);
   rpc Has (HasRequest) returns (HasResponse);
   rpc Download (DownloadRequest) returns (Void);
+  rpc Downloaded (DownloadedRequest) returns (DownloadedResponse);
   rpc Undownload (UndownloadRequest) returns (Void);
   rpc Close (CloseRequest) returns (Void);
   rpc RegisterExtension (RegisterExtensionRequest) returns (Void);
@@ -194,9 +211,10 @@ service Hypercore {
 
 service Network {
    // Methods
-  rpc ConfigureNetwork (ConfigureNetworkRequest) returns (Void);
-  rpc GetNetworkConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
-  rpc GetAllNetworkConfigurations (Void) returns (GetAllNetworkConfigurationsResponse);
+  rpc Configure (ConfigureNetworkRequest) returns (Void);
+  rpc GetConfiguration (GetNetworkConfigurationRequest) returns (GetNetworkConfigurationResponse);
+  rpc GetAllConfigurations (Void) returns (GetAllNetworkConfigurationsResponse);
+  rpc ListPeers (Void) returns (ListPeersResponse);
 
   // Events
   rpc OnReady (NetworkReadyEvent) returns (Void);

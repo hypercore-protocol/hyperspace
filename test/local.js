@@ -61,6 +61,21 @@ test('length/byteLength update correctly on append', async t => {
   t.end()
 })
 
+test('downloaded gives the correct result after append', async t => {
+  const { server, client, cleanup } = await createOne()
+
+  const core = client.corestore.get()
+  await core.ready()
+
+  const buf = Buffer.from('hello world', 'utf8')
+  await core.append([buf, buf, buf])
+  const downloaded = await core.downloaded()
+  t.same(downloaded, 3)
+
+  await cleanup()
+  t.end()
+})
+
 test('update with current length returns', async t => {
   const { client, cleanup } = await createOne()
 

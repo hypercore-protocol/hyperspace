@@ -8,17 +8,17 @@ const BOOTSTRAP_URL = `localhost:${BOOTSTRAP_PORT}`
 
 async function createOne (opts = {}) {
   const tmpDir = opts.dir || await tmp.dir({ unsafeCleanup: true })
-  const server = new HyperspaceServer({ storage: tmpDir.path, host: opts.host, network: { bootstrap: opts.bootstrap || false } })
+  const server = new HyperspaceServer({ ...opts, storage: tmpDir.path, network: { bootstrap: opts.bootstrap || false } })
   await server.ready()
 
   const client = new HyperspaceClient({ host: opts.host })
   await client.ready()
 
-  const cleanup = () => Promise.all([
-    tmpDir.cleanup(),
-    server.close(),
-    client.close()
-  ])
+  const cleanup = async () => {
+    await client.close()
+    await server.close()
+    await tmpDir.cleanup()
+  }
 
   return { server, client, cleanup, dir: tmpDir }
 }
@@ -39,7 +39,9 @@ async function createMany (numDaemons, opts) {
   })
 
   for (let i = 0; i < numDaemons; i++) {
-    const { server, client, cleanup, dir } = await createOne({ bootstrap: bootstrapOpt, host: 'hyperspace-' + i })
+    const serverOpts = opts ? Array.isArray(opts) ? opts[i] : opts : null
+    console.log('serverOpts:', serverOpts)
+    const { server, client, cleanup, dir } = await createOne({ ...serverOpts, bootstrap: bootstrapOpt, host: 'hyperspace-' + i })
     cleanups.push(cleanup)
     servers.push(server)
     clients.push(client)

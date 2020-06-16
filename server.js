@@ -21,6 +21,8 @@ module.exports = class Hyperspace extends Nanoresource {
     this.db = new HyperspaceDb(this.corestore)
     this.networker = null
 
+    this.noAnnounce = !!opts.noAnnounce
+
     this._networkOpts = opts.network || {}
     this._sock = getSocketName(opts.host)
     this._references = new Map()
@@ -63,6 +65,7 @@ module.exports = class Hyperspace extends Nanoresource {
   // Private Methods
 
   async _rejoin () {
+    if (this.noAnnounce) return
     const networkConfigurations = await this.db.listNetworkConfigurations()
     for (const config of networkConfigurations) {
       if (!config.announce) continue
@@ -103,7 +106,9 @@ module.exports = class Hyperspace extends Nanoresource {
       })
 
       flushSets.set(discoveryKey.toString('hex'), { flushSet, peerAddSet })
-      core.once('peer-add', () => callAllInSet(peerAddSet))
+      core.once('peer-add', () => {
+        callAllInSet(peerAddSet)
+      })
 
       const timeouts = {
         get: (cb) => {
@@ -115,6 +120,10 @@ module.exports = class Hyperspace extends Nanoresource {
           return flushSet.add(cb)
         },
         update: (cb) => {
+          const oldCb = cb
+          cb = (...args) => {
+            oldCb(...args)
+          }
           if (core.peers.length) return cb()
           if (this.networker.joined(discoveryKey)) {
             if (this.networker.flushed(discoveryKey) && !core.peers.length) return cb()
@@ -137,7 +146,9 @@ module.exports = class Hyperspace extends Nanoresource {
 
     client.corestore.onRequest(new CorestoreSession(client, sessionState, this.corestore))
     client.hypercore.onRequest(new HypercoreSession(client, sessionState))
-    client.network.onRequest(new NetworkSession(client, sessionState, this.networker, this.db, this._transientNetworkConfigurations))
+    client.network.onRequest(new NetworkSession(client, sessionState, this.corestore, this.networker, this.db, this._transientNetworkConfigurations, {
+      noAnnounce: this.noAnnounce
+    }))
   }
 }
 
