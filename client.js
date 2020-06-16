@@ -459,9 +459,9 @@ class RemoteHypercore extends Nanoresource {
 
   lock (onlocked) {
     // TODO: refactor so this can be opened without waiting for open
-    if (!this.opened) throw new Error('Cannot aquire a lock for an unopened feed')
+    if (!this.opened) throw new Error('Cannot acquire a lock for an unopened feed')
 
-    const prom = this._client.hypercore.aquireLock({ id: this._id })
+    const prom = this._client.hypercore.acquireLock({ id: this._id })
 
     if (onlocked) {
       const release = (cb, err, val) => { // mutexify interface

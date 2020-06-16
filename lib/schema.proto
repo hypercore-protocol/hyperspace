@@ -198,7 +198,7 @@ service Hypercore {
   rpc RegisterExtension (RegisterExtensionRequest) returns (Void);
   rpc SendExtension (ExtensionMessage) returns (Void);
 
-  rpc AquireLock (LockRequest) returns (Void);
+  rpc AcquireLock (LockRequest) returns (Void);
   rpc ReleaseLock (LockRequest) returns (Void);
 
   // Events
