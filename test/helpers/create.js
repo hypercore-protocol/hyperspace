@@ -40,7 +40,6 @@ async function createMany (numDaemons, opts) {
 
   for (let i = 0; i < numDaemons; i++) {
     const serverOpts = opts ? Array.isArray(opts) ? opts[i] : opts : null
-    console.log('serverOpts:', serverOpts)
     const { server, client, cleanup, dir } = await createOne({ ...serverOpts, bootstrap: bootstrapOpt, host: 'hyperspace-' + i })
     cleanups.push(cleanup)
     servers.push(server)

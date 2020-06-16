@@ -62,7 +62,7 @@ test('length/byteLength update correctly on append', async t => {
 })
 
 test('downloaded gives the correct result after append', async t => {
-  const { server, client, cleanup } = await createOne()
+  const { client, cleanup } = await createOne()
 
   const core = client.corestore.get()
   await core.ready()
