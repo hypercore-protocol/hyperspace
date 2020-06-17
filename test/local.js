@@ -296,7 +296,7 @@ test('corestore feed event fires', async t => {
   }
 })
 
-test.only('configs', async t => {
+test('configs', async t => {
   const { client, cleanup } = await createOne()
 
   let v = await client.config.get('foo')
