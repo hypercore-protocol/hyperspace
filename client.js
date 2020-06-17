@@ -383,6 +383,10 @@ class RemoteHypercore extends Nanoresource {
   }
 
   update (opts, cb) {
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = null
+    }
     return maybeOptional(cb, this._update(opts))
   }
 
