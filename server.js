@@ -173,6 +173,19 @@ module.exports = class Hyperspace extends Nanoresource {
       sessionState.deleteAll()
     })
 
+    client.config.onRequest(this, {
+      async get ({ name }) {
+        const value = await this.db.getUserConfig(name)
+        return { name, value }
+      },
+      async set ({ name, value }) {
+        return this.db.setUserConfig(name, value)
+      },
+      async delete ({ name }) {
+        return this.db.deleteUserConfig(name)
+      }
+    })
+
     client.corestore.onRequest(new CorestoreSession(client, sessionState, this.corestore))
     client.hypercore.onRequest(new HypercoreSession(client, sessionState))
     client.network.onRequest(new NetworkSession(client, sessionState, this.corestore, this.networker, this.db, this._transientNetworkConfigurations, {

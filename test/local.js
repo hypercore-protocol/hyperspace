@@ -296,6 +296,22 @@ test('corestore feed event fires', async t => {
   }
 })
 
+test.only('configs', async t => {
+  const { client, cleanup } = await createOne()
+
+  let v = await client.config.get('foo')
+  t.same(v, null)
+  await client.config.set('foo', 'bar')
+  v = await client.config.get('foo')
+  t.same(v, Buffer.from('bar'))
+  await client.config.delete('foo')
+  v = await client.config.get('foo')
+  t.same(v, null)
+
+  await cleanup()
+  t.end()
+})
+
 test('can lock and release', async t => {
   const { client, cleanup } = await createOne()
 

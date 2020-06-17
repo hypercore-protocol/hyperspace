@@ -174,7 +174,20 @@ message CloseEvent {
   required uint64 id = 1;
 }
 
+// Hyperspace
+
+message Config {
+  required string name = 1;
+  optional bytes value = 2;
+}
+
 // TODO: Before official release, tag these methods with explicit IDs.
+
+service Config {
+  rpc set (Config) returns (Void);
+  rpc get (Config) returns (Config);
+  rpc delete (Config) returns (Void);
+}
 
 service Corestore {
    // Methods

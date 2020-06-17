@@ -550,6 +550,29 @@ class RemoteExtension {
   }
 }
 
+class Config {
+  constructor ({ client }) {
+    this._client = client
+  }
+
+  set (name, value, cb) {
+    return maybe(cb, this._client.config.set({ name, value }))
+  }
+
+  async _get (data) {
+    const { value } = await this._client.config.get(data)
+    return value
+  }
+
+  get (name, cb) {
+    return maybe(cb, this._get({ name }))
+  }
+
+  delete (name, cb) {
+    return maybe(cb, this._client.config.delete({ name }))
+  }
+}
+
 module.exports = class HyperspaceClient extends Nanoresource {
   constructor (opts = {}) {
     super()
@@ -557,6 +580,7 @@ module.exports = class HyperspaceClient extends Nanoresource {
     this._client = HRPC.connect(this._sock)
     this.corestore = new RemoteCorestore({ client: this._client })
     this.network = new RemoteNetworker({ client: this._client })
+    this.config = new Config({ client: this._client })
   }
 
   _open () {
