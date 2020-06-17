@@ -1,5 +1,6 @@
 const Corestore = require('corestore')
 const Networker = require('corestore-swarm-networking')
+const HypercoreCache = require('hypercore-cache')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('./lib/rpc')
@@ -12,24 +13,52 @@ const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
 
+const TOTAL_CACHE_SIZE = 1024 * 1024 * 512
+const CACHE_RATIO = 0.5
+const TREE_CACHE_SIZE = TOTAL_CACHE_SIZE * CACHE_RATIO
+const DATA_CACHE_SIZE = TOTAL_CACHE_SIZE * (1 - CACHE_RATIO)
+
+const MAX_PEERS = 256
+const SWARM_PORT = 49737
+
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
-    this.corestore = new Corestore(opts.storage || './storage')
+
+    const corestoreOpts = {
+      storage: opts.storage || './storage',
+      sparse: true,
+      // Collect networking statistics.
+      stats: true,
+      cache: {
+        data: new HypercoreCache({
+          maxByteSize: DATA_CACHE_SIZE,
+          estimateSize: val => val.length
+        }),
+        tree: new HypercoreCache({
+          maxByteSize: TREE_CACHE_SIZE,
+          estimateSize: val => 40
+        })
+      },
+      ifAvailable: true
+    }
+    this.corestore = new Corestore(corestoreOpts.storage, corestoreOpts)
+
     this.server = HRPC.createServer(this._onConnection.bind(this))
     this.references = new ReferenceCounter()
     this.db = new HyperspaceDb(this.corestore)
     this.networker = null
 
     this.noAnnounce = !!opts.noAnnounce
-
-    this._networkOpts = opts.network || {}
+    this._networkOpts = opts.network || {
+      announceLocalNetwork: true,
+      preferredPort: SWARM_PORT,
+      maxPeers: MAX_PEERS,
+      ...opts.network
+    }
     this._sock = getSocketName(opts.host)
     this._references = new Map()
     this._transientNetworkConfigurations = new Map()
-
-    this._namespacedStore = null
-    this._db = null
   }
 
   // Nanoresource Methods
