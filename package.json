@@ -1,18 +1,17 @@
 {
   "name": "hyperspace",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Hypercores, batteries included.",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "standard && tape test/*.js",
-    "build": "hrpc lib/schema.proto --rpc=lib/rpc.js --messages=lib/messages.js"
+    "test": "standard && tape test/*.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/andrewosh/hyperspace.git"
+    "url": "git+https://github.com/hyperspace-org/hyperspace.git"
   },
   "keywords": [
     "hypercores",
@@ -22,16 +21,16 @@
   "author": "Andrew Osheroff <andrewosh@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/andrewosh/hyperspace/issues"
+    "url": "https://github.com/hyperspace-org/hyperspace/issues"
   },
-  "homepage": "https://github.com/andrewosh/hyperspace#readme",
+  "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
+    "@hyperspace/client": "0.0.0",
+    "@hyperspace/rpc": "0.0.0",
     "corestore": "^5.5.0",
     "corestore-swarm-networking": "^5.5.1",
-    "hrpc-runtime": "^2.0.0",
     "hypercore-cache": "^1.0.2",
     "hypercore-default-storage": "^1.0.0",
-    "hypercore-streams": "^1.0.0",
     "hypertrie": "^5.0.2",
     "inspect-custom-symbol": "^1.1.1",
     "nanoresource-promise": "^1.2.2"
@@ -39,7 +38,6 @@
   "devDependencies": {
     "@hyperswarm/dht": "^3.6.5",
     "compare": "^2.0.0",
-    "hrpc": "^2.0.0",
     "hypercore-byte-stream": "git+https://github.com/andrewosh/hypercore-byte-stream",
     "hyperdrive": "git+https://github.com/hypercore-protocol/hyperdrive#remote-hypercore-testing",
     "protocol-buffers": "^4.1.2",

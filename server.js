@@ -3,11 +3,11 @@ const Networker = require('corestore-swarm-networking')
 const HypercoreCache = require('hypercore-cache')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
-const HRPC = require('./lib/rpc')
+const HRPC = require('@hyperspace/rpc')
 const HyperspaceDb = require('./lib/db')
 const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
-const getSocketName = require('./lib/socket')
+const getSocketName = require('@hyperspace/rpc/socket')
 
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
