@@ -95,7 +95,7 @@ module.exports = class Hyperspace extends Nanoresource {
     this._transientNetworkConfigurations = new Map()
     this._pluginsMap = new Map()
 
-    for (const plugin of opts.plugins) {
+    for (const plugin of opts.plugins || []) {
       const p = new Plugin(plugin)
       if (!p.name) throw new Error('plugin.name is required')
       this._pluginsMap.set(p.name, p)
@@ -112,6 +112,10 @@ module.exports = class Hyperspace extends Nanoresource {
     this._registerCoreTimeouts()
     await this._rejoin()
     await this.server.listen(this._sock)
+
+    for (const plugin of this._pluginsMap.values()) {
+      if (plugin.autoStart) await plugin.start()
+    }
   }
 
   async _close () {
