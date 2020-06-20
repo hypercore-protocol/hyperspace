@@ -174,19 +174,25 @@ message CloseEvent {
   required uint64 id = 1;
 }
 
-// Hyperspace
-
-message Config {
+message PluginRequest {
   required string name = 1;
   optional bytes value = 2;
 }
 
+message PluginResponse {
+  optional bytes value = 1;
+}
+
+message PluginStatus {
+  optional bool running = 1;
+}
+
 // TODO: Before official release, tag these methods with explicit IDs.
 
-service Config {
-  rpc set (Config) returns (Void);
-  rpc get (Config) returns (Config);
-  rpc delete (Config) returns (Void);
+service Plugins {
+  rpc Start (PluginRequest) returns (PluginResponse);
+  rpc Stop (PluginRequest) returns (Void);
+  rpc Status (PluginRequest) returns (PluginStatus);
 }
 
 service Corestore {
