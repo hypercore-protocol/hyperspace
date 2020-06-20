@@ -33,6 +33,7 @@
     "hypercore-default-storage": "^1.0.0",
     "hypertrie": "^5.0.2",
     "inspect-custom-symbol": "^1.1.1",
+    "minimist": "^1.2.5",
     "nanoresource-promise": "^1.2.2"
   },
   "devDependencies": {

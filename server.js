@@ -220,8 +220,11 @@ module.exports = class Hyperspace extends Nanoresource {
   _onConnection (client) {
     const sessionState = new SessionState(this.references)
 
+    this.emit('client-open', client)
+
     client.on('close', () => {
       sessionState.deleteAll()
+      this.emit('client-close', client)
     })
 
     client.plugins.onRequest(this, {
