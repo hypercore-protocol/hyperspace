@@ -136,6 +136,14 @@ module.exports = class Hyperspace extends Nanoresource {
     return this.open()
   }
 
+  async addPlugin (plugin) {
+    await this.open()
+    const p = new Plugin(plugin)
+    if (!p.name) throw new Error('plugin.name is required')
+    this._pluginsMap.set(p.name, p)
+    if (p.autoStart) await p.start()
+  }
+
   // Private Methods
 
   async _rejoin () {
