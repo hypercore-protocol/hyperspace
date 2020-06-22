@@ -25,8 +25,8 @@
   },
   "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
-    "@hyperspace/client": "0.0.0",
-    "@hyperspace/rpc": "0.0.0",
+    "@hyperspace/client": "^1.0.0",
+    "@hyperspace/rpc": "^1.0.0",
     "corestore": "^5.5.0",
     "corestore-swarm-networking": "^5.5.1",
     "hypercore-cache": "^1.0.2",
