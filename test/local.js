@@ -353,6 +353,40 @@ test('can lock and release', async t => {
   t.end()
 })
 
+test('cancel a get', async t => {
+  const { client, cleanup } = await createOne()
+
+  const core = client.corestore.get()
+
+  const prom1 = core.get(42, { ifAvailable: false })
+  const prom2 = core.get(43, { ifAvailable: false })
+
+  let cancel1 = false
+  let cancel2 = false
+
+  prom1.catch((err) => {
+    cancel1 = true
+    t.notOk(cancel2, 'cancelled promise 1 first')
+    t.ok(err, 'got error')
+    core.cancel(prom2)
+  })
+  prom2.catch((err) => {
+    cancel2 = true
+    t.ok(cancel1, 'cancelled promise 1 first')
+    t.ok(err, 'got error')
+  })
+
+  core.cancel(prom1)
+
+  try {
+    await prom1
+    await prom2
+  } catch (_) {}
+
+  await cleanup()
+  t.end()
+})
+
 test('can run a hypertrie on remote hypercore', async t => {
   const { client, cleanup } = await createOne()
 
