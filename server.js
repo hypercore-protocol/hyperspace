@@ -1,4 +1,4 @@
-const p = require('path')
+const path = require('path')
 const os = require('os')
 
 const Corestore = require('corestore')
@@ -22,7 +22,7 @@ const CACHE_RATIO = 0.5
 const TREE_CACHE_SIZE = TOTAL_CACHE_SIZE * CACHE_RATIO
 const DATA_CACHE_SIZE = TOTAL_CACHE_SIZE * (1 - CACHE_RATIO)
 
-const DEFAULT_STORAGE_DIR = p.join(os.homedir(), '.hyperspace', 'storage')
+const DEFAULT_STORAGE_DIR = path.join(os.homedir(), '.hyperspace', 'storage')
 const MAX_PEERS = 256
 const SWARM_PORT = 49737
 
@@ -66,7 +66,8 @@ module.exports = class Hyperspace extends Nanoresource {
 
     var storage = opts.storage || DEFAULT_STORAGE_DIR
     if (typeof storage === 'string') {
-      storage = p => hypercoreStorage(p.join(storage, p))
+      const storagePath = storage
+      storage = p => hypercoreStorage(path.join(storagePath, p))
     }
 
     const corestoreOpts = {
