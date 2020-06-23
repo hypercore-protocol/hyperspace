@@ -3,6 +3,9 @@
   "version": "3.0.0",
   "description": "Hypercores, batteries included.",
   "main": "index.js",
+  "bin": {
+    "hyperspace": "bin.js"
+  },
   "directories": {
     "test": "test"
   },

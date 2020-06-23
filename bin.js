@@ -3,8 +3,12 @@
 const { Server } = require('./')
 const minimist = require('minimist')
 const argv = minimist(process.argv.slice(2), {
+  string: ['host', 'storage', 'bootstrap'],
+  boolean: ['memory-only', 'no-announce'],
   alias: {
-    host: 'h'
+    host: 'h',
+    storage: 's',
+    bootstrap: 'b'
   }
 })
 
@@ -12,7 +16,11 @@ main().catch(onerror)
 
 async function main () {
   const s = new Server({
-    host: argv.host
+    host: argv.host,
+    storage: argv.storage,
+    network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
+    memoryOnly: argv['memory-only'],
+    noAnnounce: argv['no-announce']
   })
 
   s.on('client-open', () => {

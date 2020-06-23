@@ -1,6 +1,10 @@
+const p = require('path')
+const os = require('os')
+
 const Corestore = require('corestore')
 const Networker = require('corestore-swarm-networking')
 const HypercoreCache = require('hypercore-cache')
+const hypercoreStorage = require('hypercore-default-storage')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('@hyperspace/rpc')
@@ -18,6 +22,7 @@ const CACHE_RATIO = 0.5
 const TREE_CACHE_SIZE = TOTAL_CACHE_SIZE * CACHE_RATIO
 const DATA_CACHE_SIZE = TOTAL_CACHE_SIZE * (1 - CACHE_RATIO)
 
+const DEFAULT_STORAGE_DIR = p.join(os.homedir(), '.hyperspace', 'storage')
 const MAX_PEERS = 256
 const SWARM_PORT = 49737
 
@@ -59,8 +64,13 @@ module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
 
+    var storage = opts.storage || DEFAULT_STORAGE_DIR
+    if (typeof storage === 'string') {
+      storage = p => hypercoreStorage(p.join(storage, p))
+    }
+
     const corestoreOpts = {
-      storage: opts.storage || './storage',
+      storage,
       sparse: true,
       // Collect networking statistics.
       stats: true,
@@ -84,7 +94,7 @@ module.exports = class Hyperspace extends Nanoresource {
     this.networker = null
 
     this.noAnnounce = !!opts.noAnnounce
-    this._networkOpts = opts.network || {
+    this._networkOpts = {
       announceLocalNetwork: true,
       preferredPort: SWARM_PORT,
       maxPeers: MAX_PEERS,
