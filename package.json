@@ -43,7 +43,7 @@
     "@hyperswarm/dht": "^3.6.5",
     "compare": "^2.0.0",
     "hypercore-byte-stream": "git+https://github.com/andrewosh/hypercore-byte-stream",
-    "hyperdrive": "git+https://github.com/hypercore-protocol/hyperdrive#remote-hypercore-testing",
+    "hyperdrive": "git+https://github.com/hypercore-protocol/hyperdrive#hyperspace-port",
     "protocol-buffers": "^4.1.2",
     "random-access-memory": "^3.1.1",
     "standard": "^14.3.4",
