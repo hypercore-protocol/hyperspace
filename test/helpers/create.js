@@ -5,7 +5,14 @@ const HyperspaceServer = require('../../server')
 
 async function createOne (opts = {}) {
   const tmpDir = opts.dir || await tmp.dir({ unsafeCleanup: true })
-  const server = new HyperspaceServer({ ...opts, storage: tmpDir.path, network: { bootstrap: opts.bootstrap || false } })
+  const server = new HyperspaceServer({
+    ...opts,
+    storage: tmpDir.path,
+    network: {
+      bootstrap: opts.bootstrap || false,
+      preferredPort: 0
+    }
+  })
   await server.ready()
 
   const client = new HyperspaceClient({ host: opts.host })
