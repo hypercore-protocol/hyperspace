@@ -387,6 +387,36 @@ test('cancel a get', async t => {
   t.end()
 })
 
+test('onwait', async t => {
+  const { client, cleanup } = await createOne()
+
+  const core = client.corestore.get()
+
+  const a = core.get(42, {
+    onwait () {
+      t.ok('should wait')
+      core.cancel(a)
+    }
+  })
+
+  const b = core.get(43, {
+    onwait () {
+      t.ok('should wait')
+      core.cancel(b)
+    }
+  })
+
+  try {
+    await a
+  } catch (_) {}
+  try {
+    await b
+  } catch (_) {}
+
+  await cleanup()
+  t.end()
+})
+
 test('can run a hypertrie on remote hypercore', async t => {
   const { client, cleanup } = await createOne()
 
