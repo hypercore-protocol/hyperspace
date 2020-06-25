@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
+const repl = require('repl')
 const { Server } = require('./')
 const minimist = require('minimist')
 const argv = minimist(process.argv.slice(2), {
   string: ['host', 'storage', 'bootstrap'],
-  boolean: ['memory-only', 'no-announce'],
+  boolean: ['memory-only', 'no-announce', 'repl'],
   alias: {
     host: 'h',
     storage: 's',
@@ -23,13 +24,20 @@ async function main () {
     noAnnounce: argv['no-announce']
   })
 
-  s.on('client-open', () => {
-    console.log('client opened')
-  })
+  if (!argv.repl) {
+    s.on('client-open', () => {
+      console.log('client opened')
+    })
 
-  s.on('client-close', () => {
-    console.log('client closed')
-  })
+    s.on('client-close', () => {
+      console.log('client closed')
+    })
+  } else {
+    const r = repl.start({
+      useGlobal: true
+    })
+    r.context.server = s
+  }
 
   process.once('SIGINT', close)
   process.once('SIGTERM', close)
