@@ -28,13 +28,13 @@
   },
   "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
+    "@corestore/networker": "^0.0.1",
     "@hyperspace/client": "^1.0.0",
     "@hyperspace/rpc": "^1.0.0",
     "corestore": "^5.5.0",
-    "corestore-swarm-networking": "^5.5.1",
     "hypercore-cache": "^1.0.2",
     "hypercore-default-storage": "^1.0.0",
-    "hypertrie": "^5.0.2",
+    "hypertrie": "^5.0.4",
     "inspect-custom-symbol": "^1.1.1",
     "minimist": "^1.2.5",
     "nanoresource-promise": "^1.2.2"

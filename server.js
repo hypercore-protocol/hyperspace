@@ -2,7 +2,7 @@ const path = require('path')
 const os = require('os')
 
 const Corestore = require('corestore')
-const Networker = require('corestore-swarm-networking')
+const Networker = require('@corestore/networker')
 const HypercoreCache = require('hypercore-cache')
 const hypercoreStorage = require('hypercore-default-storage')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
@@ -162,7 +162,7 @@ module.exports = class Hyperspace extends Nanoresource {
     const networkConfigurations = await this.db.listNetworkConfigurations()
     for (const config of networkConfigurations) {
       if (!config.announce) continue
-      const joinProm = this.networker.join(config.discoveryKey, {
+      const joinProm = this.networker.configure(config.discoveryKey, {
         announce: config.announce,
         lookup: config.lookup
       })
