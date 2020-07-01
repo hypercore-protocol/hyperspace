@@ -94,10 +94,10 @@ test('can get a stored network configuration', async t => {
   await core.ready()
   await client.network.configure(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
-  const config = await client.network.getConfiguration(core.discoveryKey)
-  t.true(config.discoveryKey.equals(core.discoveryKey))
-  t.true(config.announce)
-  t.true(config.lookup)
+  const status = await client.network.status(core.discoveryKey)
+  t.true(status.discoveryKey.equals(core.discoveryKey))
+  t.true(status.announce)
+  t.true(status.lookup)
 
   await cleanup()
   t.end()
@@ -111,10 +111,10 @@ test('can get a transient network configuration', async t => {
   await core.ready()
   await client.network.configure(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
 
-  const config = await client.network.getConfiguration(core.discoveryKey)
-  t.true(config.discoveryKey.equals(core.discoveryKey))
-  t.false(config.announce)
-  t.true(config.lookup)
+  const status = await client.network.status(core.discoveryKey)
+  t.true(status.discoveryKey.equals(core.discoveryKey))
+  t.false(status.announce)
+  t.true(status.lookup)
 
   await cleanup()
   t.end()
@@ -135,15 +135,15 @@ test('can get all network configurations', async t => {
   await client.network.configure(core2.discoveryKey, { announce: false, lookup: true, flush: true, remember: true })
   await client.network.configure(core3.discoveryKey, { announce: true, lookup: true, flush: true, remember: false })
 
-  const configs = await client.network.getAllConfigurations()
-  t.same(configs.length, 3)
+  const statuses = await client.network.allStatuses()
+  t.same(statuses.length, 3)
   let remembers = 0
   let announces = 0
   let lookups = 0
-  for (const config of configs) {
-    if (config.remember) remembers++
-    if (config.announce) announces++
-    if (config.lookup) lookups++
+  for (const status of statuses) {
+    if (status.remember) remembers++
+    if (status.announce) announces++
+    if (status.lookup) lookups++
   }
 
   t.same(lookups, 3)
