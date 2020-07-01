@@ -136,7 +136,8 @@ module.exports = class Hyperspace extends Nanoresource {
     await new Promise((resolve, reject) => {
       this.corestore.close(err => {
         if (err) return reject(err)
-        return resolve(null)})
+        return resolve(null)
+      })
     })
   }
 
