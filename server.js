@@ -26,40 +26,6 @@ const DEFAULT_STORAGE_DIR = path.join(os.homedir(), '.hyperspace', 'storage')
 const MAX_PEERS = 256
 const SWARM_PORT = 49737
 
-class Plugin {
-  constructor (plugin) {
-    this.plugin = plugin
-    this.name = plugin.name || plugin.constructor.NAME
-    this.autoStart = plugin.autoStart || plugin.constructor.AUTOSTART
-    this.pending = null
-    this.started = null
-  }
-
-  async _wait () {
-    try {
-      await this.pending
-    } catch (_) {}
-  }
-
-  async status () {
-    await this._wait()
-    return { running: !!this.started }
-  }
-
-  async start (val) {
-    await this._wait()
-    if (!this.started) this.pending = this.started = this.plugin.start(val)
-    return { value: await this.started }
-  }
-
-  async stop () {
-    await this._wait()
-    if (this.started) this.pending = this.plugin.stop()
-    this.started = null
-    return this.pending
-  }
-}
-
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
     super()
@@ -104,13 +70,6 @@ module.exports = class Hyperspace extends Nanoresource {
     this._sock = getSocketName(opts.host)
     this._references = new Map()
     this._transientNetworkConfigurations = new Map()
-    this._pluginsMap = new Map()
-
-    for (const plugin of opts.plugins || []) {
-      const p = new Plugin(plugin)
-      if (!p.name) throw new Error('plugin.name is required')
-      this._pluginsMap.set(p.name, p)
-    }
   }
 
   // Nanoresource Methods
@@ -123,10 +82,6 @@ module.exports = class Hyperspace extends Nanoresource {
     this._registerCoreTimeouts()
     await this._rejoin()
     await this.server.listen(this._sock)
-
-    for (const plugin of this._pluginsMap.values()) {
-      if (plugin.autoStart) await plugin.start()
-    }
   }
 
   async _close () {
@@ -145,14 +100,6 @@ module.exports = class Hyperspace extends Nanoresource {
 
   ready () {
     return this.open()
-  }
-
-  async addPlugin (plugin) {
-    await this.open()
-    const p = new Plugin(plugin)
-    if (!p.name) throw new Error('plugin.name is required')
-    this._pluginsMap.set(p.name, p)
-    if (p.autoStart) await p.start()
   }
 
   // Private Methods
@@ -230,12 +177,6 @@ module.exports = class Hyperspace extends Nanoresource {
     })
   }
 
-  _getPlugin (name) {
-    const p = this._pluginsMap.get(name)
-    if (!p) throw new Error('Unknown plugin: ' + name)
-    return p
-  }
-
   _onConnection (client) {
     const sessionState = new SessionState(this.references)
 
@@ -246,17 +187,6 @@ module.exports = class Hyperspace extends Nanoresource {
       this.emit('client-close', client)
     })
 
-    client.plugins.onRequest(this, {
-      start ({ name, value }) {
-        return this._getPlugin(name).start(value)
-      },
-      stop ({ name }) {
-        return this._getPlugin(name).stop()
-      },
-      status ({ name }) {
-        return this._getPlugin(name).status()
-      }
-    })
     client.corestore.onRequest(new CorestoreSession(client, sessionState, this.corestore))
     client.hypercore.onRequest(new HypercoreSession(client, sessionState))
     client.network.onRequest(new NetworkSession(client, sessionState, this.corestore, this.networker, this.db, this._transientNetworkConfigurations, {

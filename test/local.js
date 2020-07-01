@@ -296,41 +296,6 @@ test('corestore feed event fires', async t => {
   }
 })
 
-test('plugins', async t => {
-  let once = true
-
-  const { client, cleanup } = await createOne({
-    plugins: [{
-      name: 'test',
-      start () {
-        t.ok(once, 'only start once')
-        once = false
-        t.pass('starting')
-        return Buffer.from('hi')
-      },
-      stop () {
-        t.pass('stopping')
-      }
-    }]
-  })
-
-  t.same(await client.plugins.status('test'), { running: false })
-
-  const val = await client.plugins.start('test')
-  t.same(val, Buffer.from('hi'))
-  const val2 = await client.plugins.start('test')
-  t.same(val2, Buffer.from('hi'))
-
-  t.same(await client.plugins.status('test'), { running: true })
-
-  await client.plugins.stop('test')
-
-  t.same(await client.plugins.status('test'), { running: false })
-
-  await cleanup()
-  t.end()
-})
-
 test('can lock and release', async t => {
   const { client, cleanup } = await createOne()
 
