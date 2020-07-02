@@ -14,6 +14,8 @@ const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
 const getSocketName = require('@hyperspace/rpc/socket')
 
+const trie = require('./extensions/trie')
+
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
@@ -55,6 +57,7 @@ module.exports = class Hyperspace extends Nanoresource {
       ifAvailable: true
     }
     this.corestore = new Corestore(corestoreOpts.storage, corestoreOpts)
+    trie(this.corestore)
 
     this.server = HRPC.createServer(this._onConnection.bind(this))
     this.references = new ReferenceCounter()
