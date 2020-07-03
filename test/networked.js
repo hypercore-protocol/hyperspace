@@ -1,4 +1,5 @@
 const test = require('tape')
+const hypercoreCrypto = require('hypercore-crypto')
 const { createOne, createMany } = require('./helpers/create')
 
 test('can replicate one core between two daemons', async t => {
@@ -237,3 +238,184 @@ test('an existing core is opened with peers', async t => {
   await cleanup()
   t.end()
 })
+
+test('can send on a network extension', async t => {
+  const { clients, cleanup } = await createMany(3)
+  const extensionName = 'test-extension'
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+  const client3 = clients[2]
+  let oneReceived = 0
+  let twoReceived = 0
+
+  const sharedKey = hypercoreCrypto.randomBytes(32)
+
+  const ext1 = client1.network.registerExtension(extensionName, {
+    encoding: 'utf8',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
+      t.same(message, 'hello-0')
+      oneReceived++
+    }
+  })
+
+  client2.network.registerExtension(extensionName, {
+    encoding: 'utf8',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
+      t.same(message, 'hello-1')
+      twoReceived++
+    }
+  })
+
+  const ext3 = client3.network.registerExtension(extensionName, {
+    encoding: 'utf8'
+  })
+
+  await client3.network.configure(sharedKey, { announce: true, lookup: true })
+  await client1.network.configure(sharedKey, { announce: false, lookup: true })
+  await client2.network.configure(sharedKey, { announce: false, lookup: true })
+
+  await delay(100)
+
+  for (let i = 0; i < client3.network.peers.length; i++) {
+    ext3.send('hello-' + i, client3.network.peers[i])
+  }
+
+  await delay(100)
+
+  // Destroy the first extension and make sure it doesn't trigger onmessage again.
+  ext1.destroy()
+  ext3.send('another world', client3.network.peers[0])
+
+  await delay(100)
+
+  t.same(oneReceived, 1)
+  t.same(twoReceived, 1)
+
+  await cleanup()
+  t.end()
+})
+
+test('can broadcast on a network extension', async t => {
+  const { clients, cleanup } = await createMany(3)
+  const extensionName = 'test-extension'
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+  const client3 = clients[2]
+  let oneReceived = 0
+  let twoReceived = 0
+
+  const sharedKey = hypercoreCrypto.randomBytes(32)
+
+  const ext1 = client1.network.registerExtension(extensionName, {
+    encoding: 'utf8',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
+      t.same(message, 'hello world')
+      oneReceived++
+    }
+  })
+
+  client2.network.registerExtension(extensionName, {
+    encoding: 'utf8',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
+      t.same(message, 'hello world')
+      twoReceived++
+    }
+  })
+
+  const ext3 = client3.network.registerExtension(extensionName, {
+    encoding: 'utf8'
+  })
+
+  await client3.network.configure(sharedKey, { announce: true, lookup: true })
+  await client1.network.configure(sharedKey, { announce: false, lookup: true })
+  await client2.network.configure(sharedKey, { announce: false, lookup: true })
+
+  await delay(100)
+
+  ext3.broadcast('hello world')
+
+  await delay(100)
+
+  t.same(oneReceived, 1)
+  t.same(twoReceived, 1)
+
+  await cleanup()
+  t.end()
+})
+
+test('can send on a hypercore extension', async t => {
+  const { clients, cleanup } = await createMany(3)
+  const extensionName = 'test-extension'
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+  const client3 = clients[2]
+  let oneReceived = 0
+  let twoReceived = 0
+
+  const core1 = client1.corestore.get()
+  await core1.ready()
+
+  const core2 = client2.corestore.get(core1.key)
+  const core3 = client3.corestore.get(core1.key)
+  await core2.ready()
+  await core3.ready()
+
+  const ext1 = core1.registerExtension(extensionName, {
+    encoding: 'utf8',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
+      t.same(message, 'hello-0')
+      oneReceived++
+    }
+  })
+
+  core2.registerExtension(extensionName, {
+    encoding: 'utf8',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
+      t.same(message, 'hello-1')
+      twoReceived++
+    }
+  })
+
+  const ext3 = core3.registerExtension(extensionName, {
+    encoding: 'utf8'
+  })
+
+  await client3.network.configure(core1.discoveryKey, { announce: true, lookup: true })
+  await client1.network.configure(core2.discoveryKey, { announce: false, lookup: true })
+  await client2.network.configure(core3.discoveryKey, { announce: false, lookup: true })
+
+  await delay(100)
+
+  for (let i = 0; i < core3.peers.length; i++) {
+    ext3.send('hello-' + i, core3.peers[i])
+  }
+
+  await delay(100)
+
+  // Destroy the first extension and make sure it doesn't trigger onmessage again.
+  /*
+  ext1.destroy()
+  ext3.send('another world', client3.network.peers[0])
+  */
+
+  await delay(100)
+
+  t.same(oneReceived, 1)
+  t.same(twoReceived, 1)
+
+  await cleanup()
+  t.end()
+})
+
+function delay (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
