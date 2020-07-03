@@ -310,7 +310,7 @@ test('can broadcast on a network extension', async t => {
 
   const sharedKey = hypercoreCrypto.randomBytes(32)
 
-  const ext1 = client1.network.registerExtension(extensionName, {
+  client1.network.registerExtension(extensionName, {
     encoding: 'utf8',
     onmessage: (message, peer) => {
       t.true(peer.remotePublicKey.equals(client3.network.keyPair.publicKey))
@@ -402,10 +402,8 @@ test('can send on a hypercore extension', async t => {
   await delay(100)
 
   // Destroy the first extension and make sure it doesn't trigger onmessage again.
-  /*
   ext1.destroy()
   ext3.send('another world', client3.network.peers[0])
-  */
 
   await delay(100)
 
