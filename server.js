@@ -177,6 +177,14 @@ module.exports = class Hyperspace extends Nanoresource {
     })
   }
 
+  // Top-level RPC Methods
+
+  _status () {
+    return {
+      apiVersion: require('@hyperspace/rpc/package.json').version
+    }
+  }
+
   _onConnection (client) {
     const sessionState = new SessionState(this.references)
 
