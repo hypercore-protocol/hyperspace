@@ -177,14 +177,6 @@ module.exports = class Hyperspace extends Nanoresource {
     })
   }
 
-  // Top-level RPC Methods
-
-  _status () {
-    return {
-      apiVersion: require('@hyperspace/rpc/package.json').version
-    }
-  }
-
   _onConnection (client) {
     const sessionState = new SessionState(this.references)
 
@@ -195,11 +187,20 @@ module.exports = class Hyperspace extends Nanoresource {
       this.emit('client-close', client)
     })
 
+    client.hyperspace.onRequest(this)
     client.corestore.onRequest(new CorestoreSession(client, sessionState, this.corestore))
     client.hypercore.onRequest(new HypercoreSession(client, sessionState))
     client.network.onRequest(new NetworkSession(client, sessionState, this.corestore, this.networker, this.db, this._transientNetworkConfigurations, {
       noAnnounce: this.noAnnounce
     }))
+  }
+
+  // Top-level RPC Methods
+
+  status () {
+    return {
+      apiVersion: require('@hyperspace/rpc/package.json').version
+    }
   }
 }
 
