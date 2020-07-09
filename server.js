@@ -5,6 +5,7 @@ const Corestore = require('corestore')
 const Networker = require('@corestore/networker')
 const HypercoreCache = require('hypercore-cache')
 const hypercoreStorage = require('hypercore-default-storage')
+const migrateFromDaemon = require('hyperspace-migration-tool')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('@hyperspace/rpc')
@@ -61,6 +62,8 @@ module.exports = class Hyperspace extends Nanoresource {
     this.networker = null
 
     this.noAnnounce = !!opts.noAnnounce
+    this.noMigrate = !!opts.noMigrate
+
     this._networkOpts = {
       announceLocalNetwork: true,
       preferredPort: SWARM_PORT,
@@ -75,12 +78,20 @@ module.exports = class Hyperspace extends Nanoresource {
   // Nanoresource Methods
 
   async _open () {
+    // Note: This will be removed in future releases of Hyperspace.
+    // If the hyperdrive-daemon -> hyperspace migration has already completed, this is a no-op.
+
+    // TODO: Uncomment
+    const NO_MIGRATE = false
+    if (NO_MIGRATE && !this.noMigrate) await migrateFromDaemon()
+
     await this.corestore.ready()
     await this.db.open()
     this.networker = new Networker(this.corestore, this._networkOpts)
     await this.networker.listen()
     this._registerCoreTimeouts()
     await this._rejoin()
+
     await this.server.listen(this._sock)
   }
 

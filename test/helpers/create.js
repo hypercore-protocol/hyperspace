@@ -11,7 +11,8 @@ async function createOne (opts = {}) {
     network: {
       bootstrap: opts.bootstrap || false,
       preferredPort: 0
-    }
+    },
+    noMigrate: true
   })
   await server.ready()
 
