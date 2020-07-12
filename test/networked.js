@@ -7,21 +7,21 @@ test('can replicate one core between two daemons', async t => {
 
   const client1 = clients[0]
   const client2 = clients[1]
+  const corestore1 = client1.corestore()
+  const corestore2 = client2.corestore()
 
-  const core1 = client1.corestore.get()
+  const core1 = corestore1.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
   await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
 
-  const core2 = client2.corestore.get(core1.key)
+  const core2 = corestore2.get(core1.key)
   await core2.ready()
   await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   const block = await core2.get(0)
   t.same(block.toString('utf8'), 'hello world')
 
-  console.log('before cleanup')
   await cleanup()
-  console.log('after cleanup')
   t.end()
 })
 
@@ -31,8 +31,10 @@ test('announced discovery key is rejoined on restart', async t => {
   var client1 = clients[0]
   var server1 = servers[0]
   const client2 = clients[1]
+  const corestore1 = client1.corestore()
+  const corestore2 = client2.corestore()
 
-  const core1 = client1.corestore.get()
+  const core1 = corestore1.get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
   await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
@@ -42,7 +44,7 @@ test('announced discovery key is rejoined on restart', async t => {
   client1 = newServer.client
   server1 = newServer.server
 
-  const core2 = client2.corestore.get(core1.key)
+  const core2 = corestore2.get(core1.key)
   await core2.ready()
   await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   const block = await core2.get(0)
@@ -57,8 +59,9 @@ test('peers are set on a remote hypercore', async t => {
   const { clients, servers, cleanup } = await createMany(5)
   const firstPeerRemoteKey = servers[0].networker.keyPair.publicKey
 
+  const corestores = clients.map(c => c.corestore())
   const client1 = clients[0]
-  const core1 = client1.corestore.get()
+  const core1 = corestores[0].get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
   await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
@@ -66,7 +69,8 @@ test('peers are set on a remote hypercore', async t => {
   // Create 4 more peers, and each one should only connect to the first.
   for (let i = 1; i < clients.length; i++) {
     const client = clients[i]
-    const core = client.corestore.get(core1.key)
+    const corestore = corestores[i]
+    const core = corestore.get(core1.key)
     await core.ready()
     const peerAddProm = new Promise(resolve => {
       let opened = 0
@@ -93,7 +97,8 @@ test('can get a stored network configuration', async t => {
   const { clients, cleanup } = await createMany(1)
   const client = clients[0]
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
   await client.network.configure(core.discoveryKey, { announce: true, lookup: true, flush: true, remember: true })
 
@@ -110,7 +115,8 @@ test('can get a transient network configuration', async t => {
   const { clients, cleanup } = await createMany(1)
   const client = clients[0]
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
   await client.network.configure(core.discoveryKey, { announce: false, lookup: true, flush: true, remember: false })
 
@@ -127,9 +133,9 @@ test('can get all network configurations', async t => {
   const { clients, cleanup } = await createMany(1)
   const client = clients[0]
 
-  const core1 = client.corestore.get()
-  const core2 = client.corestore.get()
-  const core3 = client.corestore.get()
+  const core1 = client.corestore().get()
+  const core2 = client.corestore().get()
+  const core3 = client.corestore().get()
   await core1.ready()
   await core2.ready()
   await core3.ready()
@@ -161,7 +167,7 @@ test('can get swarm-level networking events', async t => {
   const { clients, servers, cleanup } = await createMany(5)
 
   const client1 = clients[0]
-  const core1 = client1.corestore.get()
+  const core1 = client1.corestore().get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
   await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
@@ -186,7 +192,7 @@ test('can get swarm-level networking events', async t => {
   // Create 4 more peers, and each one should only connect to the first.
   for (let i = 1; i < clients.length; i++) {
     const client = clients[i]
-    const core = client.corestore.get(core1.key)
+    const core = client.corestore().get(core1.key)
     await core.ready()
     await client.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   }
@@ -208,7 +214,7 @@ test('an existing core is opened with peers', async t => {
   const { clients, cleanup } = await createMany(5)
 
   const client1 = clients[0]
-  const core1 = client1.corestore.get()
+  const core1 = client1.corestore().get()
   await core1.ready()
   await core1.append(Buffer.from('hello world', 'utf8'))
   await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
@@ -225,14 +231,14 @@ test('an existing core is opened with peers', async t => {
   // Create 4 more peers, and each one should only connect to the first.
   for (let i = 1; i < clients.length; i++) {
     const client = clients[i]
-    const core = client.corestore.get(core1.key)
+    const core = client.corestore().get(core1.key)
     await core.ready()
     await client.network.configure(core1.discoveryKey, { announce: false, lookup: true })
   }
 
   await openProm
 
-  const core2 = client1.corestore.get(core1.key)
+  const core2 = client1.corestore().get(core1.key)
   await core2.ready()
   // Peers should be set immediately after ready.
   t.same(core2.peers.length, 4)
@@ -361,11 +367,11 @@ test('can send on a hypercore extension', async t => {
   let oneReceived = 0
   let twoReceived = 0
 
-  const core1 = client1.corestore.get()
+  const core1 = client1.corestore().get()
   await core1.ready()
 
-  const core2 = client2.corestore.get(core1.key)
-  const core3 = client3.corestore.get(core1.key)
+  const core2 = client2.corestore().get(core1.key)
+  const core3 = client3.corestore().get(core1.key)
   await core2.ready()
   await core3.ready()
 

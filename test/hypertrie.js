@@ -13,7 +13,8 @@ let client = null
 let cleanup = null
 
 function create (key, opts) {
-  const feed = client.corestore.get(key)
+  const corestore = client.corestore()
+  const feed = corestore.get(key)
   return hypertrie(null, null, {
     valueEncoding: 'json',
     ...opts,

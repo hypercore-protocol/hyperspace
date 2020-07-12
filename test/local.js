@@ -7,7 +7,8 @@ const { createOne } = require('./helpers/create')
 test('can open a core', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   t.same(core.byteLength, 0)
@@ -22,7 +23,8 @@ test('can open a core', async t => {
 test('can get a block', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   await core.append(Buffer.from('hello world', 'utf8'))
@@ -36,7 +38,8 @@ test('can get a block', async t => {
 test('length/byteLength update correctly on append', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   let appendedCount = 0
@@ -64,7 +67,8 @@ test('length/byteLength update correctly on append', async t => {
 test('downloaded gives the correct result after append', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -79,7 +83,8 @@ test('downloaded gives the correct result after append', async t => {
 test('update with current length returns', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -105,7 +110,8 @@ test('update with current length returns', async t => {
 test('appending many large blocks works', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   const NUM_BLOCKS = 200
@@ -125,7 +131,8 @@ test('appending many large blocks works', async t => {
 test('seek works correctly', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -156,7 +163,8 @@ test('seek works correctly', async t => {
 test('has works correctly', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -175,7 +183,8 @@ test('has works correctly', async t => {
 test('download works correctly', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
   await core.ready()
 
   const buf = Buffer.from('hello world', 'utf8')
@@ -200,7 +209,8 @@ test('download works correctly', async t => {
 test('valueEncodings work', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get({ valueEncoding: 'utf8' })
+  const corestore = client.corestore()
+  const core = corestore.get({ valueEncoding: 'utf8' })
   await core.ready()
 
   await core.append('hello world')
@@ -214,8 +224,8 @@ test('valueEncodings work', async t => {
 test('corestore default get works', async t => {
   const { client, cleanup } = await createOne()
 
-  const ns1 = client.corestore.namespace('blah')
-  const ns2 = client.corestore.namespace('blah2')
+  const ns1 = client.corestore('blah')
+  const ns2 = client.corestore('blah2')
 
   var core = ns1.default()
   await core.ready()
@@ -243,10 +253,11 @@ test('corestore default get works', async t => {
 test('weak references work', async t => {
   const { client, cleanup } = await createOne()
 
-  const core1 = client.corestore.get()
+  const corestore = client.corestore()
+  const core1 = corestore.get()
   await core1.ready()
 
-  const core2 = client.corestore.get(core1.key, { weak: true })
+  const core2 = corestore.get(core1.key, { weak: true })
   await core2.ready()
 
   await core1.append(Buffer.from('hello world', 'utf8'))
@@ -264,9 +275,10 @@ test('weak references work', async t => {
 test('corestore feed event fires', async t => {
   const { client, cleanup } = await createOne()
 
+  const corestore = client.corestore()
   const emittedFeeds = []
   const emittedProm = new Promise(resolve => {
-    client.corestore.on('feed', async feed => {
+    corestore.on('feed', async feed => {
       t.same(feed._id, undefined)
       emittedFeeds.push(feed)
       if (emittedFeeds.length === 3) {
@@ -276,11 +288,11 @@ test('corestore feed event fires', async t => {
     })
   })
 
-  const core1 = client.corestore.get()
+  const core1 = corestore.get()
   await core1.ready()
-  const core2 = client.corestore.get()
+  const core2 = corestore.get()
   await core2.ready()
-  const core3 = client.corestore.get()
+  const core3 = corestore.get()
   await core3.ready()
   await emittedProm
 
@@ -299,7 +311,8 @@ test('corestore feed event fires', async t => {
 test('can lock and release', async t => {
   const { client, cleanup } = await createOne()
 
-  const core1 = client.corestore.get()
+  const corestore = client.corestore()
+  const core1 = corestore.get()
   await core1.ready()
 
   const release = await core1.lock()
@@ -321,7 +334,8 @@ test('can lock and release', async t => {
 test('cancel a get', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
 
   const prom1 = core.get(42, { ifAvailable: false })
   const prom2 = core.get(43, { ifAvailable: false })
@@ -355,7 +369,8 @@ test('cancel a get', async t => {
 test('onwait', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
 
   const a = core.get(42, {
     onwait () {
@@ -385,7 +400,8 @@ test('onwait', async t => {
 test('can run a hypertrie on remote hypercore', async t => {
   const { client, cleanup } = await createOne()
 
-  const core = client.corestore.default()
+  const corestore = client.corestore()
+  const core = corestore.default()
   await core.ready()
 
   const trie = hypertrie(null, null, {
@@ -414,7 +430,7 @@ test('can run a hypertrie on remote hypercore', async t => {
 test('can run a hyperdrive on a remote hypercore', async t => {
   const { client, cleanup } = await createOne()
 
-  const drive = hyperdrive(client.corestore, null, {
+  const drive = hyperdrive(client.corestore(), null, {
     extension: false,
     valueEncoding: 'utf8'
   })

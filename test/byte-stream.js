@@ -12,7 +12,8 @@ let client = null
 let cleanup = null
 
 function createLocal (numRecords, recordSize, cb) {
-  const core = client.corestore.get()
+  const corestore = client.corestore()
+  const core = corestore.get()
 
   const records = []
   for (let i = 0; i < numRecords; i++) {
