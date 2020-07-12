@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
-    "@corestore/networker": "^0.0.1",
+    "@corestore/networker": "0.0.6",
     "@hyperspace/client": "^1.0.0",
     "@hyperspace/rpc": "^1.0.0",
     "corestore": "^5.5.0",
@@ -36,6 +36,7 @@
     "hypercore-cache": "^1.0.2",
     "hypercore-default-storage": "^1.0.0",
     "hyperspace-migration-tool": "git+https://github.com/andrewosh/hyperspace-migration-tool.git",
+    "hyperswarm": "^2.14.1",
     "hypertrie": "^5.0.4",
     "inspect-custom-symbol": "^1.1.1",
     "minimist": "^1.2.5",

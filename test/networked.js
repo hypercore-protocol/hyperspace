@@ -1,9 +1,8 @@
-const log = require('why-is-node-running')
 const test = require('tape')
 const hypercoreCrypto = require('hypercore-crypto')
 const { createOne, createMany } = require('./helpers/create')
 
-test.only('can replicate one core between two daemons', async t => {
+test('can replicate one core between two daemons', async t => {
   const { clients, cleanup } = await createMany(2)
 
   const client1 = clients[0]
@@ -454,10 +453,4 @@ test('can unconfigure a previous configuration only if it was the most recent fo
 
   await cleanup()
   t.end()
-  console.log('AT THE END')
-
 })
-
-setTimeout(() => {
-  log()
-}, 5000)
