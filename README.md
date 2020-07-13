@@ -39,7 +39,7 @@ The `hyperspace` command supports the following flags:
 --no-migrate  // Do not attempt to migrate the Hyperdrive daemon's storage to Hyperspace.
 ```
 
-By default, Hyperspace binds to a UNIX domain socket (or named pipe on Windows) in `~/.hyperspace`.
+By default, Hyperspace binds to a UNIX domain socket (or named pipe on Windows) at `~/.hyperspace/hyperspace.sock`.
 
 Once the server's started, you can use the client to create and manage remote Hypercores. If you'd like the use the Hyperdrive CLI, check out the [`@hyperspace/hyperdrive` docs](https://github.com/hyperspace-org/hyperdrive-service).
 
