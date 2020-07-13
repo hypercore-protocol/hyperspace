@@ -9,7 +9,6 @@ const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emit
 
 const HRPC = require('@hyperspace/rpc')
 const getSocketName = require('@hyperspace/rpc/socket')
-const migrateFromDaemon = require('@hyperspace/migration-tool')
 
 const HyperspaceDb = require('./lib/db')
 const ReferenceCounter = require('./lib/references')
@@ -79,10 +78,6 @@ module.exports = class Hyperspace extends Nanoresource {
   // Nanoresource Methods
 
   async _open () {
-    // Note: This will be removed in future releases of Hyperspace.
-    // If the hyperdrive-daemon -> hyperspace migration has already completed, this is a no-op.
-    if (!this.noMigrate) await migrateFromDaemon()
-
     await this.corestore.ready()
     await this.db.open()
     this.networker = new Networker(this.corestore, this._networkOpts)
