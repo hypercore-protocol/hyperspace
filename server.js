@@ -202,8 +202,13 @@ module.exports = class Hyperspace extends Nanoresource {
   // Top-level RPC Methods
 
   status () {
+    const swarm = this.networker && this.networker.swarm
+    const remoteAddress = swarm && swarm.remoteAddress()
+    const holepunchable = swarm && swarm.holepunchable()
     return {
-      apiVersion: require('@hyperspace/rpc/package.json').version
+      apiVersion: require('@hyperspace/rpc/package.json').version,
+      holepunchable: holepunchable,
+      remoteAddress: remoteAddress ? remoteAddress.host + ':' + remoteAddress.port : ''
     }
   }
 }
