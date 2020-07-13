@@ -37,6 +37,7 @@ The `hyperspace` command supports the following flags:
 --memory-only // Run in memory-only mode.
 --no-announce // Never announce topics on the DHT.
 --no-migrate  // Do not attempt to migrate the Hyperdrive daemon's storage to Hyperspace.
+--repl        // Start the server with a debugging REPL.
 ```
 
 By default, Hyperspace binds to a UNIX domain socket (or named pipe on Windows) at `~/.hyperspace/hyperspace.sock`.
