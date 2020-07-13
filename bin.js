@@ -5,7 +5,7 @@ const { Server } = require('./')
 const minimist = require('minimist')
 const argv = minimist(process.argv.slice(2), {
   string: ['host', 'storage', 'bootstrap'],
-  boolean: ['memory-only', 'no-announce', 'repl'],
+  boolean: ['memory-only', 'no-announce', 'no-migrate', 'repl'],
   alias: {
     host: 'h',
     storage: 's',
@@ -21,7 +21,8 @@ async function main () {
     storage: argv.storage,
     network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
     memoryOnly: argv['memory-only'],
-    noAnnounce: argv['no-announce']
+    noAnnounce: argv['no-announce'],
+    noMigrate: argv['no-migrate']
   })
 
   if (!argv.repl) {
