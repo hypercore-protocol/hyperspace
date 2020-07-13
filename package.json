@@ -44,7 +44,7 @@
     "why-is-node-running": "^2.2.0"
   },
   "devDependencies": {
-    "@hyperswarm/dht": "^3.6.5",
+    "@hyperswarm/dht": "^4.0.1",
     "compare": "^2.0.0",
     "hypercore-byte-stream": "^1.0.0",
     "hyperdrive": "git+https://github.com/hypercore-protocol/hyperdrive#hyperspace-port",
