@@ -3,6 +3,8 @@
 const repl = require('repl')
 const { Server } = require('./')
 const minimist = require('minimist')
+const migrateFromDaemon = require('@hyperspace/migration-tool')
+
 const argv = minimist(process.argv.slice(2), {
   string: ['host', 'storage', 'bootstrap'],
   boolean: ['memory-only', 'no-announce', 'no-migrate', 'repl'],
@@ -12,10 +14,12 @@ const argv = minimist(process.argv.slice(2), {
     bootstrap: 'b'
   }
 })
-
 main().catch(onerror)
 
 async function main () {
+  // Note: This will be removed in future releases of Hyperspace.
+  // If the hyperdrive-daemon -> hyperspace migration has already completed, this is a no-op.
+  if (!argv['no-migrate']) await migrateFromDaemon()
   const s = new Server({
     host: argv.host,
     storage: argv.storage,

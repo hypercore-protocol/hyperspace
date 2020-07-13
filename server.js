@@ -64,7 +64,6 @@ module.exports = class Hyperspace extends Nanoresource {
     this.networker = null
 
     this.noAnnounce = !!opts.noAnnounce
-    this.noMigrate = !!opts.noMigrate
 
     this._networkOpts = {
       announceLocalNetwork: true,
