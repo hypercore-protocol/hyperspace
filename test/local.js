@@ -431,7 +431,6 @@ test('can run a hyperdrive on a remote hypercore', async t => {
   const { client, cleanup } = await createOne()
 
   const drive = hyperdrive(client.corestore(), null, {
-    extension: false,
     valueEncoding: 'utf8'
   })
   await new Promise(resolve => {
