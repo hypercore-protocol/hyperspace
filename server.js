@@ -11,14 +11,13 @@ const HRPC = require('@hyperspace/rpc')
 const getSocketName = require('@hyperspace/rpc/socket')
 const migrateFromDaemon = require('@hyperspace/migration-tool')
 
-
-const trie = require('./extensions/trie')
 const HyperspaceDb = require('./lib/db')
 const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
+const startTrieExtension = require('./extensions/trie')
 
 const TOTAL_CACHE_SIZE = 1024 * 1024 * 512
 const CACHE_RATIO = 0.5
@@ -57,7 +56,7 @@ module.exports = class Hyperspace extends Nanoresource {
       ifAvailable: true
     }
     this.corestore = new Corestore(corestoreOpts.storage, corestoreOpts)
-    trie(this.corestore)
+    startTrieExtension(this.corestore)
 
     this.server = HRPC.createServer(this._onConnection.bind(this))
     this.references = new ReferenceCounter()

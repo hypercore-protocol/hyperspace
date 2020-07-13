@@ -1,7 +1,7 @@
 const hypertrie = require('hypertrie')
 const { Header } = require('hypertrie/lib/messages')
 
-module.exports = function (corestore) {
+module.exports = function startTrieExtension (corestore) {
   corestore.on('feed', function (feed) {
     onHeaderType(feed, function (type) {
       if (type !== 'hypertrie') return
