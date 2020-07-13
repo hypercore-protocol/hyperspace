@@ -5,17 +5,17 @@ const Corestore = require('corestore')
 const Networker = require('@corestore/networker')
 const HypercoreCache = require('hypercore-cache')
 const hypercoreStorage = require('hypercore-default-storage')
-const migrateFromDaemon = require('hyperspace-migration-tool')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('@hyperspace/rpc')
+const getSocketName = require('@hyperspace/rpc/socket')
+const migrateFromDaemon = require('@hyperspace/migration-tool')
+
+
+const trie = require('./extensions/trie')
 const HyperspaceDb = require('./lib/db')
 const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
-const getSocketName = require('@hyperspace/rpc/socket')
-
-const trie = require('./extensions/trie')
-
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
 const NetworkSession = require('./lib/sessions/network')
@@ -83,10 +83,7 @@ module.exports = class Hyperspace extends Nanoresource {
   async _open () {
     // Note: This will be removed in future releases of Hyperspace.
     // If the hyperdrive-daemon -> hyperspace migration has already completed, this is a no-op.
-
-    // TODO: Uncomment
-    const NO_MIGRATE = false
-    if (NO_MIGRATE && !this.noMigrate) await migrateFromDaemon()
+    if (!this.noMigrate) await migrateFromDaemon()
 
     await this.corestore.ready()
     await this.db.open()
