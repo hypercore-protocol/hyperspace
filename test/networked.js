@@ -437,7 +437,7 @@ test('can unconfigure a previous configuration only if it was the most recent fo
   t.true(status.announce)
   t.true(status.lookup)
 
-  await config.unconfigure()
+  await client.network.unconfigure(config)
   status = await client.network.status(discoveryKey)
   t.false(status.announce)
   t.false(status.lookup)
@@ -451,7 +451,7 @@ test('can unconfigure a previous configuration only if it was the most recent fo
   t.false(status.announce)
 
   // The first user attempts to unconfigure, but it should fail because another user's performed the latest configuration.
-  await config.unconfigure()
+  await client.network.unconfigure(config)
   status = await client.network.status(discoveryKey)
   // If the unconfiguration succeeded, lookup would be false.
   t.true(status.lookup)
