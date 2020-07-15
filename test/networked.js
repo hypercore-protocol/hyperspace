@@ -425,38 +425,3 @@ test('can send on a hypercore extension', async t => {
 function delay (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
-
-test('can unconfigure a previous configuration only if it was the most recent for that dkey', async t => {
-  const { clients, cleanup } = await createMany(1)
-  const discoveryKey = hypercoreCrypto.randomBytes(32)
-  const client = clients[0]
-
-  let config = client.network.configure(discoveryKey, { announce: true, lookup: true, flush: true })
-  await config
-  let status = await client.network.status(discoveryKey)
-  t.true(status.announce)
-  t.true(status.lookup)
-
-  await client.network.unconfigure(config)
-  status = await client.network.status(discoveryKey)
-  t.false(status.announce)
-  t.false(status.lookup)
-
-  config = client.network.configure(discoveryKey, { announce: true, lookup: true, flush: true })
-  // This simulates another user updating the network configuration for the discovery key.
-  await config
-  await client.network.configure(discoveryKey, { announce: false, lookup: true, flush: true })
-  status = await client.network.status(discoveryKey)
-  t.true(status.lookup)
-  t.false(status.announce)
-
-  // The first user attempts to unconfigure, but it should fail because another user's performed the latest configuration.
-  await client.network.unconfigure(config)
-  status = await client.network.status(discoveryKey)
-  // If the unconfiguration succeeded, lookup would be false.
-  t.true(status.lookup)
-  t.false(status.announce)
-
-  await cleanup()
-  t.end()
-})

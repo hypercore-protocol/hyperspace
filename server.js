@@ -72,7 +72,7 @@ module.exports = class Hyperspace extends Nanoresource {
     }
     this._sock = getSocketName(opts.host)
     this._references = new Map()
-    this._transientNetworkConfigurations = new Map()
+    this._networkState = new Map()
   }
 
   // Nanoresource Methods
@@ -115,7 +115,8 @@ module.exports = class Hyperspace extends Nanoresource {
       if (!config.announce) continue
       const joinProm = this.networker.configure(config.discoveryKey, {
         announce: config.announce,
-        lookup: config.lookup
+        lookup: config.lookup,
+        remember: true
       })
       joinProm.catch(err => this.emit('swarm-error', err))
     }
@@ -194,7 +195,7 @@ module.exports = class Hyperspace extends Nanoresource {
     client.hyperspace.onRequest(this)
     client.corestore.onRequest(new CorestoreSession(client, sessionState, this.corestore))
     client.hypercore.onRequest(new HypercoreSession(client, sessionState))
-    client.network.onRequest(new NetworkSession(client, sessionState, this.corestore, this.networker, this.db, this._transientNetworkConfigurations, {
+    client.network.onRequest(new NetworkSession(client, sessionState, this.corestore, this.networker, this.db, this._networkState, {
       noAnnounce: this.noAnnounce
     }))
   }
