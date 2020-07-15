@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
-    "@corestore/networker": "0.0.6",
+    "@corestore/networker": "^1.0.0",
     "@hyperspace/client": "^1.0.0",
     "@hyperspace/rpc": "^1.0.0",
     "@hyperspace/migration-tool": "^1.0.0",
