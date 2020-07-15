@@ -116,7 +116,9 @@ module.exports = class Hyperspace extends Nanoresource {
       const joinProm = this.networker.configure(config.discoveryKey, {
         announce: config.announce,
         lookup: config.lookup,
-        remember: true
+        // remember/discoveryKey are passed so that they will be saved in the networker's internal configurations list.
+        remember: true,
+        discoveryKey: config.discoveryKey
       })
       joinProm.catch(err => this.emit('swarm-error', err))
     }
