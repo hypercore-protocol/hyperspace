@@ -11,7 +11,6 @@ const HRPC = require('@hyperspace/rpc')
 const getSocketName = require('@hyperspace/rpc/socket')
 
 const HyperspaceDb = require('./lib/db')
-const ReferenceCounter = require('./lib/references')
 const SessionState = require('./lib/session-state')
 const CorestoreSession = require('./lib/sessions/corestore')
 const HypercoreSession = require('./lib/sessions/hypercore')
@@ -58,7 +57,6 @@ module.exports = class Hyperspace extends Nanoresource {
     startTrieExtension(this.corestore)
 
     this.server = HRPC.createServer(this._onConnection.bind(this))
-    this.references = new ReferenceCounter()
     this.db = new HyperspaceDb(this.corestore)
     this.networker = null
 
@@ -71,7 +69,6 @@ module.exports = class Hyperspace extends Nanoresource {
       ...opts.network
     }
     this._sock = getSocketName(opts.host)
-    this._references = new Map()
     this._networkState = new Map()
   }
 
@@ -185,7 +182,7 @@ module.exports = class Hyperspace extends Nanoresource {
   }
 
   _onConnection (client) {
-    const sessionState = new SessionState(this.references)
+    const sessionState = new SessionState(this.corestore)
 
     this.emit('client-open', client)
 
