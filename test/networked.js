@@ -422,6 +422,43 @@ test('can send on a hypercore extension', async t => {
   t.end()
 })
 
+test('can read a live stream', async t => {
+  const { clients, cleanup } = await createMany(2)
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+  const corestore1 = client1.corestore()
+  const corestore2 = client2.corestore()
+
+  const core1 = corestore1.get()
+  await core1.ready()
+  await core1.append(Buffer.from('zero', 'utf8'))
+  await core1.append(Buffer.from('one', 'utf8'))
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+
+  const core2 = corestore2.get(core1.key, { valueEncoding: 'utf8' })
+  await core2.ready()
+  await client2.network.configure(core2.discoveryKey, { announce: false, lookup: true })
+
+  const rs = core2.createReadStream({ live: true })
+  const blocks = []
+  rs.on('data', block => {
+    blocks.push(block)
+  })
+
+  await delay(100)
+  t.deepEqual(blocks, ['zero', 'one'])
+
+  await core1.append(Buffer.from('two'))
+  await core1.append(Buffer.from('three'))
+  await delay(100)
+  t.deepEqual(blocks, ['zero', 'one', 'two', 'three'])
+
+  rs.destroy()
+  await cleanup()
+  t.end()
+})
+
 function delay (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
