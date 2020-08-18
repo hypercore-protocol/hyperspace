@@ -450,3 +450,21 @@ test('can run a hyperdrive on a remote hypercore', async t => {
   await cleanup()
   t.end()
 })
+
+test('can connect over a tcp socket', async t => {
+  const { client, cleanup } = await createOne({
+    port: 8199
+  })
+
+  const corestore = client.corestore()
+  const core = corestore.get()
+  await core.ready()
+
+  t.same(core.byteLength, 0)
+  t.same(core.length, 0)
+  t.same(core.key.length, 32)
+  t.same(core.discoveryKey.length, 32)
+
+  await cleanup()
+  t.end()
+})

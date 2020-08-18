@@ -8,7 +8,7 @@ const hypercoreStorage = require('hypercore-default-storage')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
 const HRPC = require('@hyperspace/rpc')
-const getSocketName = require('@hyperspace/rpc/socket')
+const getNetworkOptions = require('@hyperspace/rpc/socket')
 
 const HyperspaceDb = require('./lib/db')
 const SessionState = require('./lib/session-state')
@@ -68,7 +68,7 @@ module.exports = class Hyperspace extends Nanoresource {
       maxPeers: MAX_PEERS,
       ...opts.network
     }
-    this._sock = getSocketName(opts.host)
+    this._socketOpts = getNetworkOptions(opts)
     this._networkState = new Map()
   }
 
@@ -82,7 +82,7 @@ module.exports = class Hyperspace extends Nanoresource {
     this._registerCoreTimeouts()
     await this._rejoin()
 
-    await this.server.listen(this._sock)
+    await this.server.listen(this._socketOpts)
   }
 
   async _close () {
