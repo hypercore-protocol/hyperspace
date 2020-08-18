@@ -16,7 +16,7 @@ async function createOne (opts = {}) {
   })
   await server.ready()
 
-  const client = new HyperspaceClient({ host: opts.host })
+  const client = new HyperspaceClient({ host: opts.host, port: opts.port })
   await client.ready()
 
   const cleanup = async () => {

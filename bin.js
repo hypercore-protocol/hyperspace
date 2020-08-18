@@ -23,6 +23,7 @@ ${version}
 Usage: hyperspace [options]
 
   --host,      -h  Set unix socket name
+  --port       -p  Set the port (will use TCP)
   --storage,   -s  Overwrite storage folder
   --bootstrap, -b  Overwrite DHT bootstrap servers
   --memory-only    Run all storage in memory
@@ -53,6 +54,7 @@ async function main () {
 
   const s = new Server({
     host: argv.host,
+    port: argv.port,
     storage: argv.storage,
     network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
     memoryOnly: argv['memory-only'],
@@ -101,7 +103,12 @@ async function main () {
     }
   }
 
-  console.log('Listening on ' + s._sock)
+  const socketOpts = s._socketOpts
+  if (socketOpts.port) {
+    console.log(`Listening on ${socketOpts.host || 'localhost'}:${socketOpts.port}`)
+  } else {
+    console.log(`Listening on ${socketOpts}`)
+  }
 
   function close () {
     console.log('Shutting down...')

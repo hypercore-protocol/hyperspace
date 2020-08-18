@@ -34,6 +34,7 @@ The `hyperspace` command supports the following flags:
 ```
 --bootstrap   // Hyperswarm bootstrapping options (see Hyperswarm docs).
 --host        // Host to bind to.
+--port        // Port to bind to (if specified, will use TCP).
 --memory-only // Run in memory-only mode.
 --no-announce // Never announce topics on the DHT.
 --no-migrate  // Do not attempt to migrate the Hyperdrive daemon's storage to Hyperspace.
