@@ -38,7 +38,7 @@ module.exports = class Hyperspace extends Nanoresource {
 
     const corestoreOpts = {
       storage,
-      sparse: true,
+      sparse: opts.sparse !== false,
       // Collect networking statistics.
       stats: true,
       cache: {
