@@ -373,15 +373,17 @@ test('onwait', async t => {
   const core = corestore.get()
 
   const a = core.get(42, {
-    onwait () {
+    onwait (seq) {
       t.ok('should wait')
+      t.same(seq, 42)
       core.cancel(a)
     }
   })
 
   const b = core.get(43, {
-    onwait () {
+    onwait (seq) {
       t.ok('should wait')
+      t.same(seq, 43)
       core.cancel(b)
     }
   })
