@@ -397,6 +397,25 @@ test('onwait', async t => {
   t.end()
 })
 
+test('onwait only on missing blocks', async t => {
+  const { client, cleanup } = await createOne()
+
+  const corestore = client.corestore()
+  const core = corestore.get()
+  await core.ready()
+
+  await core.append(Buffer.from('hello world', 'utf8'))
+  const block = await core.get(0, {
+    onwait () {
+      t.notOk('should not wait')
+    }
+  })
+  t.same(block.toString('utf8'), 'hello world')
+
+  await cleanup()
+  t.end()
+})
+
 test('can run a hypertrie on remote hypercore', async t => {
   const { client, cleanup } = await createOne()
 
