@@ -7,7 +7,11 @@ const { migrate: migrateFromDaemon, isMigrated } = require('@hyperspace/migratio
 
 const argv = minimist(process.argv.slice(2), {
   string: ['host', 'storage', 'bootstrap'],
-  boolean: ['memory-only', 'no-announce', 'no-migrate', 'repl'],
+  boolean: ['memory-only', 'announce', 'migrate', 'repl'],
+  default: {
+    announce: true,
+    migrate: true
+  },
   alias: {
     host: 'h',
     storage: 's',
@@ -44,7 +48,7 @@ async function main () {
 
   // Note: This will be removed in future releases of Hyperspace.
   // If the hyperdrive-daemon -> hyperspace migration has already completed, this is a no-op.
-  if (!argv['no-migrate']) {
+  if (argv.migrate) {
     if (!(await isMigrated())) {
       console.log('Migrating from Hyperdrive daemon...')
       await migrateFromDaemon()
@@ -58,8 +62,8 @@ async function main () {
     storage: argv.storage,
     network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
     memoryOnly: argv['memory-only'],
-    noAnnounce: argv['no-announce'],
-    noMigrate: argv['no-migrate']
+    noAnnounce: !argv.announce,
+    noMigrate: !argv.migrate
   })
 
   if (!argv.repl) {
