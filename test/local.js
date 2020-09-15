@@ -489,3 +489,29 @@ test('can connect over a tcp socket', async t => {
   await cleanup()
   t.end()
 })
+
+test('handles corestore gc correctly', async t => {
+  const { client, cleanup } = await createOne({
+    cacheSize: 1
+  })
+  const store1 = client.corestore()
+  const store2 = client.corestore()
+
+  const core1 = store1.get()
+  await core1.ready()
+
+  const core2 = store2.get()
+  const core3 = store2.get(core1.key)
+  await core2.ready()
+  await core3.ready()
+
+  try {
+    await core3.append('hello world')
+    t.pass('append did not error')
+  } catch (err) {
+    t.fail(err)
+  }
+
+  await cleanup()
+  t.end()
+})
