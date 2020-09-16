@@ -459,7 +459,7 @@ test('can read a live stream', async t => {
   t.end()
 })
 
-test('can watch downloads and appends', async t => {
+test.only('can watch downloads and appends', async t => {
   const { clients, cleanup } = await createMany(2)
 
   const client1 = clients[0]
