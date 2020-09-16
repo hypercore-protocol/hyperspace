@@ -1,9 +1,15 @@
 #!/usr/bin/env node
-
+const p = require('path')
+const os = require('os')
+const fs = require('fs').promises
 const repl = require('repl')
 const { Server, Client } = require('./')
 const minimist = require('minimist')
 const { migrate: migrateFromDaemon, isMigrated } = require('@hyperspace/migration-tool')
+
+// TODO: Default paths are duplicated here because we need to do the async migration check.
+const HYPERSPACE_STORAGE_DIR = p.join(os.homedir(), '.hyperspace', 'storage')
+const HYPERDRIVE_STORAGE_DIR = p.join(os.homedir(), '.hyperdrive', 'storage', 'cores')
 
 const argv = minimist(process.argv.slice(2), {
   string: ['host', 'storage', 'bootstrap'],
@@ -49,17 +55,23 @@ async function main () {
   // Note: This will be removed in future releases of Hyperspace.
   // If the hyperdrive-daemon -> hyperspace migration has already completed, this is a no-op.
   if (argv.migrate) {
-    if (!(await isMigrated())) {
+    if (!(await isMigrated({ noMove: true }))) {
       console.log('Migrating from Hyperdrive daemon...')
-      await migrateFromDaemon()
+      // TODO: For Beaker compat, do not move existing cores into ~/.hyperspace for now.
+      await migrateFromDaemon({ noMove: true })
       console.log('Migration finished.')
     }
   }
 
+  // For now, the storage path is determined as follows:
+  // If ~/.hyperdrive/storage/cores exists, use that (from an old hyperdrive daemon installation)
+  // Else, use ~/.hyperspace/storage
+  const storage = argv.storage ? argv.storage : await getStoragePath()
+
   const s = new Server({
     host: argv.host,
     port: argv.port,
-    storage: argv.storage,
+    storage,
     network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
     memoryOnly: argv['memory-only'],
     noAnnounce: !argv.announce,
@@ -118,6 +130,17 @@ async function main () {
   function close () {
     console.log('Shutting down...')
     s.close().catch(onerror)
+  }
+}
+
+async function getStoragePath () {
+  try {
+    // If this dir exists, use it.
+    await fs.stat(HYPERDRIVE_STORAGE_DIR)
+    return HYPERDRIVE_STORAGE_DIR
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err
+    return HYPERSPACE_STORAGE_DIR
   }
 }
 
