@@ -511,6 +511,42 @@ test('can watch downloads and appends', async t => {
   t.end()
 })
 
+test('download all', async t => {
+  const { clients, cleanup } = await createMany(2)
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+  const corestore1 = client1.corestore()
+  const corestore2 = client2.corestore()
+
+  const core1 = corestore1.get()
+  await core1.ready()
+  await core1.append(Buffer.from('zero', 'utf8'))
+  await core1.append(Buffer.from('one', 'utf8'))
+  await core1.append(Buffer.from('two', 'utf8'))
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: true, flush: true })
+
+  const core2 = corestore2.get(core1.key)
+  await core2.ready()
+
+  let downloads = 0
+  const p = new Promise((resolve) => {
+    core2.on('download', () => {
+      downloads++
+      if (downloads === 3) resolve()
+    })
+  })
+
+  await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
+
+  core2.download() // download all
+
+  await p
+  t.same(downloads, 3, '3 downloads')
+  await cleanup()
+  t.end()
+})
+
 function watchDownloadPromise (core, expectedSeq) {
   return new Promise((resolve, reject) => {
     core.once('download', seq => {
