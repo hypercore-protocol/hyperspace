@@ -422,6 +422,104 @@ test('can send on a hypercore extension', async t => {
   t.end()
 })
 
+test('can encode messages on a hypercore extension', async t => {
+  const { clients, cleanup } = await createMany(2)
+  const extensionName = 'test-extension'
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+
+  const core1 = client1.corestore().get()
+  await core1.ready()
+  const core2 = client2.corestore().get(core1.key)
+  await core2.ready()
+
+  let received = 0
+  const ext1 = core1.registerExtension(extensionName, {
+    encoding: 'json',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client2.network.keyPair.publicKey))
+      t.deepEqual(message, { hello: 'world' })
+      received++
+    }
+  })
+
+  const ext2 = core2.registerExtension(extensionName, {
+    encoding: 'json',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client1.network.keyPair.publicKey))
+      t.deepEqual(message, { hello: 'world' })
+      received++
+    }
+  })
+
+  core1.on('peer-open', peer => {
+    ext1.send({ hello: 'world' }, peer)
+  })
+  core2.on('peer-open', peer => {
+    ext2.send({ hello: 'world' }, peer)
+  })
+
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: false })
+  await client2.network.configure(core2.discoveryKey, { announce: false, lookup: true })
+
+  await delay(100)
+
+  t.same(received, 2)
+
+  await cleanup()
+  t.end()
+})
+
+test('can encode messages on a network extension', async t => {
+  const { clients, cleanup } = await createMany(2)
+  const extensionName = 'test-extension'
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+
+  const core1 = client1.corestore().get()
+  await core1.ready()
+  const core2 = client2.corestore().get(core1.key)
+  await core2.ready()
+
+  let received = 0
+  const ext1 = client1.network.registerExtension(extensionName, {
+    encoding: 'json',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client2.network.keyPair.publicKey))
+      t.deepEqual(message, { hello: 'world' })
+      received++
+    }
+  })
+
+  const ext2 = client2.network.registerExtension(extensionName, {
+    encoding: 'json',
+    onmessage: (message, peer) => {
+      t.true(peer.remotePublicKey.equals(client1.network.keyPair.publicKey))
+      t.deepEqual(message, { hello: 'world' })
+      received++
+    }
+  })
+
+  client1.network.on('peer-open', peer => {
+    ext1.send({ hello: 'world' }, peer)
+  })
+  client2.network.on('peer-open', peer => {
+    ext2.send({ hello: 'world' }, peer)
+  })
+
+  await client1.network.configure(core1.discoveryKey, { announce: true, lookup: false })
+  await client2.network.configure(core2.discoveryKey, { announce: false, lookup: true })
+
+  await delay(100)
+
+  t.same(received, 2)
+
+  await cleanup()
+  t.end()
+})
+
 test('can read a live stream', async t => {
   const { clients, cleanup } = await createMany(2)
 
