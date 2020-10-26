@@ -57,7 +57,7 @@ module.exports = class Hyperspace extends Nanoresource {
     this.corestore = new Corestore(corestoreOpts.storage, corestoreOpts)
     startTrieExtension(this.corestore)
 
-    this.server = HRPC.createServer(this._onConnection.bind(this))
+    this.server = HRPC.createServer(opts.server, this._onConnection.bind(this))
     this.db = new HyperspaceDb(this.corestore)
     this.networker = null
 
