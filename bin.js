@@ -3,9 +3,13 @@ const p = require('path')
 const os = require('os')
 const fs = require('fs').promises
 const repl = require('repl')
-const { Server, Client } = require('./')
+const { spawn } = require('child_process')
 const minimist = require('minimist')
+const ram = require('random-access-memory')
+
+const { Server, Client } = require('./')
 const { migrate: migrateFromDaemon, isMigrated } = require('@hyperspace/migration-tool')
+const getNetworkOptions = require('@hyperspace/rpc/socket')
 
 // TODO: Default paths are duplicated here because we need to do the async migration check.
 const HYPERSPACE_STORAGE_DIR = p.join(os.homedir(), '.hyperspace', 'storage')
@@ -30,16 +34,19 @@ const version = `hyperspace/${require('./package.json').version} ${process.platf
 const help = `Hypercore, batteries included.
 ${version}
 
-Usage: hyperspace [options]
-
-  --host,      -h  Set unix socket name
-  --port       -p  Set the port (will use TCP)
-  --storage,   -s  Overwrite storage folder
-  --bootstrap, -b  Overwrite DHT bootstrap servers
-  --memory-only    Run all storage in memory
-  --no-announce    Disable all network annoucnes
-  --repl           Run a debug repl
-  --no-migrate     Disable the Hyperdrive Daemon migration
+Usage: hyperspace [command] [options]
+  Commands:
+    simulator <script.js>  Run script.js using an in-memory Hyperspace instance
+  
+  Flags:
+    --host,      -h  Set unix socket name
+    --port       -p  Set the port (will use TCP)
+    --storage,   -s  Overwrite storage folder
+    --bootstrap, -b  Overwrite DHT bootstrap servers
+    --memory-only    Run all storage in memory
+    --no-announce    Disable all network annoucnes
+    --repl           Run a debug repl
+    --no-migrate     Disable the Hyperdrive Daemon migration
 `
 
 if (argv.help) {
@@ -50,6 +57,10 @@ if (argv.help) {
 main().catch(onerror)
 
 async function main () {
+  if (argv._[0] === 'simulator') {
+    return simulator()
+  }
+
   console.log('Running ' + version)
 
   // Note: This will be removed in future releases of Hyperspace.
@@ -68,15 +79,7 @@ async function main () {
   // Else, use ~/.hyperspace/storage
   const storage = argv.storage ? argv.storage : await getStoragePath()
 
-  const s = new Server({
-    host: argv.host,
-    port: argv.port,
-    storage,
-    network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
-    memoryOnly: argv['memory-only'],
-    noAnnounce: !argv.announce,
-    noMigrate: !argv.migrate
-  })
+  const s = createServer(storage, argv)
   global.hyperspace = s
 
   if (!argv.repl) {
@@ -130,6 +133,58 @@ async function main () {
   function close () {
     console.log('Shutting down...')
     s.close().catch(onerror)
+  }
+}
+
+function createServer (storage, opts) {
+  return new Server({
+    host: opts.host,
+    port: opts.port,
+    storage,
+    network: opts.bootstrap ? { bootstrap: [].concat(opts.bootstrap) } : null,
+    noAnnounce: !opts.announce,
+    noMigrate: !opts.migrate
+  })
+}
+
+async function simulator () {
+  if (argv._.length === 1) throw new Error('Must provide a script for the simulator to run.')
+  const scriptPath = p.resolve(argv._[1])
+  const simulatorId = await getUnusedSocket()
+  process.env['HYPERSPACE_HOST'] = simulatorId
+
+  const server = createServer(ram, {
+    ...argv,
+    host: simulatorId
+  })
+  await server.open()
+
+  process.once('SIGINT', close)
+  process.once('SIGTERM', close)
+
+  const child = spawn(process.execPath, [scriptPath], {
+    env: {
+      'HYPERSPACE_HOST': simulatorId
+    },
+    stdio: 'inherit'
+  })
+  child.on('close', close)
+
+  async function close () {
+    console.log('Shutting down simulator...')
+    server.close().catch(onerror)
+  }
+
+  async function getUnusedSocket () {
+    const host = `hyperspace-simulator-${(Math.floor(Math.random() * 1e9)).toString(16)}`
+    const socketPath = getNetworkOptions({ host })
+    try {
+      await fs.stat(socketPath)
+      return getUnusedSocket()
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err
+      return host
+    }
   }
 }
 
