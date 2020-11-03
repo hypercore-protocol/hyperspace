@@ -7,9 +7,8 @@ const { spawn } = require('child_process')
 const minimist = require('minimist')
 const ram = require('random-access-memory')
 
-const { Server, Client } = require('./')
+const { Server, Client } = require('../')
 const { migrate: migrateFromDaemon, isMigrated } = require('@hyperspace/migration-tool')
-const getNetworkOptions = require('@hyperspace/rpc/socket')
 
 // TODO: Default paths are duplicated here because we need to do the async migration check.
 const HYPERSPACE_STORAGE_DIR = p.join(os.homedir(), '.hyperspace', 'storage')
@@ -26,21 +25,15 @@ const argv = minimist(process.argv.slice(2), {
     host: 'h',
     storage: 's',
     bootstrap: 'b'
-  },
-  '--': true
+  }
 })
-console.log('argv:', argv)
 
-const version = `hyperspace/${require('./package.json').version} ${process.platform}-${process.arch} node-${process.version}`
+const version = `hyperspace/${require('../package.json').version} ${process.platform}-${process.arch} node-${process.version}`
 
 const help = `Hypercore, batteries included.
 ${version}
 
-Usage: hyperspace [command] [options]
-  Commands:
-    simulator <script.js>  Run script.js using an in-memory Hyperspace instance
-  
-  Flags:
+Usage: hyperspace [options]
     --host,      -h  Set unix socket name
     --port       -p  Set the port (will use TCP)
     --storage,   -s  Overwrite storage folder
@@ -59,10 +52,6 @@ if (argv.help) {
 main().catch(onerror)
 
 async function main () {
-  if (argv._[0] === 'simulator') {
-    return simulator()
-  }
-
   console.log('Running ' + version)
 
   // Note: This will be removed in future releases of Hyperspace.
@@ -147,33 +136,6 @@ function createServer (storage, opts) {
     noAnnounce: !opts.announce,
     noMigrate: !opts.migrate
   })
-}
-
-async function simulator () {
-  if (argv._.length === 1) throw new Error('Must provide a script for the simulator to run.')
-  const scriptPath = p.resolve(argv._[1])
-  const simulatorId = `hyperspace-simulator-${process.pid}`
-  process.env.HYPERSPACE_SOCKET = simulatorId
-
-  const server = createServer(ram, {
-    ...argv,
-    host: simulatorId
-  })
-  await server.open()
-
-  process.once('SIGINT', close)
-  process.once('SIGTERM', close)
-
-  const childArgs = argv['--'] || []
-  const child = spawn(process.execPath, [scriptPath, ...childArgs], {
-    stdio: 'inherit'
-  })
-  child.on('close', close)
-
-  async function close () {
-    console.log('Shutting down simulator...')
-    server.close().catch(onerror)
-  }
 }
 
 async function getStoragePath () {
