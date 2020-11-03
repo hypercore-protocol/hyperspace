@@ -151,7 +151,7 @@ async function simulator () {
   if (argv._.length === 1) throw new Error('Must provide a script for the simulator to run.')
   const scriptPath = p.resolve(argv._[1])
   const simulatorId = await getUnusedSocket()
-  process.env['HYPERSPACE_HOST'] = simulatorId
+  process.env.HYPERSPACE_HOST = simulatorId
 
   const server = createServer(ram, {
     ...argv,
@@ -164,7 +164,7 @@ async function simulator () {
 
   const child = spawn(process.execPath, [scriptPath], {
     env: {
-      'HYPERSPACE_HOST': simulatorId
+      HYPERSPACE_HOST: simulatorId
     },
     stdio: 'inherit'
   })
