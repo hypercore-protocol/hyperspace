@@ -547,6 +547,27 @@ test('download all', async t => {
   t.end()
 })
 
+test('can swarm with the replicate function', async t => {
+  const { clients, cleanup } = await createMany(2)
+
+  const client1 = clients[0]
+  const client2 = clients[1]
+  const corestore1 = client1.corestore()
+  const corestore2 = client2.corestore()
+
+  const core1 = corestore1.get()
+  await client1.replicate(core1)
+  await core1.append(Buffer.from('hello world', 'utf8'))
+
+  const core2 = corestore2.get(core1.key)
+  await client2.replicate(core2)
+  const block = await core2.get(0)
+  t.same(block.toString('utf8'), 'hello world')
+
+  await cleanup()
+  t.end()
+})
+
 function watchDownloadPromise (core, expectedSeq) {
   return new Promise((resolve, reject) => {
     core.once('download', seq => {
