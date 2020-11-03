@@ -14,7 +14,7 @@ const help = `Hypercore, batteries included.
 ${version}
 
 Usage: hyperspace-simulator <script.js> -- [script-args]
-  Run the test script using an in-memory Hyperspace instance.
+  Run the test script using an live, in-memory Hyperspace instance.
 `
 
 if (argv.help) {
