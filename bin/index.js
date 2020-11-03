@@ -32,6 +32,7 @@ const help = `Hypercore, batteries included.
 ${version}
 
 Usage: hyperspace [options]
+
   --host,      -h  Set unix socket name
   --port       -p  Set the port (will use TCP)
   --storage,   -s  Overwrite storage folder
