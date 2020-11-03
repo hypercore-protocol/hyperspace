@@ -4,7 +4,7 @@ const { spawn } = require('child_process')
 const minimist = require('minimist')
 const ram = require('random-access-memory')
 
-const { Server, Client } = require('../')
+const { Server } = require('../')
 
 const argv = minimist(process.argv.slice(2), {
   '--': true
@@ -22,7 +22,6 @@ if (argv.help) {
   process.exit(0)
 }
 main().catch(onerror)
-
 
 async function main () {
   if (!argv._.length) throw new Error('Must provide a script for the simulator to run.')
