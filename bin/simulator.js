@@ -24,7 +24,7 @@ if (argv.help) {
 main().catch(onerror)
 
 async function main () {
-  if (!argv._.length) throw new Error('Must provide a script for the simulator to run.')
+  if (!argv._.length) return console.error(help)
   const scriptPath = p.resolve(argv._[0])
   const simulatorId = `hyperspace-simulator-${process.pid}`
   process.env.HYPERSPACE_SOCKET = simulatorId
@@ -45,7 +45,7 @@ async function main () {
   })
   child.on('close', close)
 
-  async function close () {
+  function close () {
     console.log('Shutting down simulator...')
     server.close().catch(onerror)
   }
