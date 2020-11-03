@@ -77,7 +77,6 @@ async function main () {
     noAnnounce: !argv.announce,
     noMigrate: !argv.migrate
   })
-
   global.hyperspace = s
 
   if (!argv.repl) {
