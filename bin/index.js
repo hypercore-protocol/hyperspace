@@ -32,14 +32,14 @@ const help = `Hypercore, batteries included.
 ${version}
 
 Usage: hyperspace [options]
-    --host,      -h  Set unix socket name
-    --port       -p  Set the port (will use TCP)
-    --storage,   -s  Overwrite storage folder
-    --bootstrap, -b  Overwrite DHT bootstrap servers
-    --memory-only    Run all storage in memory
-    --no-announce    Disable all network annoucnes
-    --repl           Run a debug repl
-    --no-migrate     Disable the Hyperdrive Daemon migration
+  --host,      -h  Set unix socket name
+  --port       -p  Set the port (will use TCP)
+  --storage,   -s  Overwrite storage folder
+  --bootstrap, -b  Overwrite DHT bootstrap servers
+  --memory-only    Run all storage in memory
+  --no-announce    Disable all network annoucnes
+  --repl           Run a debug repl
+  --no-migrate     Disable the Hyperdrive Daemon migration
 `
 
 if (argv.help) {
