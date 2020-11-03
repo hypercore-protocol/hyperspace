@@ -163,9 +163,6 @@ async function simulator () {
   process.once('SIGTERM', close)
 
   const child = spawn(process.execPath, [scriptPath], {
-    env: {
-      HYPERSPACE_SOCKET: simulatorId
-    },
     stdio: 'inherit'
   })
   child.on('close', close)
