@@ -3,9 +3,7 @@ const p = require('path')
 const os = require('os')
 const fs = require('fs').promises
 const repl = require('repl')
-const { spawn } = require('child_process')
 const minimist = require('minimist')
-const ram = require('random-access-memory')
 
 const { Server, Client } = require('../')
 const { migrate: migrateFromDaemon, isMigrated } = require('@hyperspace/migration-tool')
