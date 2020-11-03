@@ -26,8 +26,10 @@ const argv = minimist(process.argv.slice(2), {
     host: 'h',
     storage: 's',
     bootstrap: 'b'
-  }
+  },
+  '--': true
 })
+console.log('argv:', argv)
 
 const version = `hyperspace/${require('./package.json').version} ${process.platform}-${process.arch} node-${process.version}`
 
@@ -162,7 +164,8 @@ async function simulator () {
   process.once('SIGINT', close)
   process.once('SIGTERM', close)
 
-  const child = spawn(process.execPath, [scriptPath], {
+  const childArgs = argv['--'] || []
+  const child = spawn(process.execPath, [scriptPath, ...childArgs], {
     stdio: 'inherit'
   })
   child.on('close', close)
