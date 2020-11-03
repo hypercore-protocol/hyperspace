@@ -69,7 +69,15 @@ async function main () {
   // Else, use ~/.hyperspace/storage
   const storage = argv.storage ? argv.storage : await getStoragePath()
 
-  const s = createServer(storage, argv)
+  const s = new Server({
+    host: argv.host,
+    port: argv.port,
+    storage,
+    network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
+    noAnnounce: !argv.announce,
+    noMigrate: !argv.migrate
+  })
+
   global.hyperspace = s
 
   if (!argv.repl) {
@@ -124,17 +132,6 @@ async function main () {
     console.log('Shutting down...')
     s.close().catch(onerror)
   }
-}
-
-function createServer (storage, opts) {
-  return new Server({
-    host: opts.host,
-    port: opts.port,
-    storage,
-    network: opts.bootstrap ? { bootstrap: [].concat(opts.bootstrap) } : null,
-    noAnnounce: !opts.announce,
-    noMigrate: !opts.migrate
-  })
 }
 
 async function getStoragePath () {
