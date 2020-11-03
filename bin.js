@@ -150,7 +150,7 @@ function createServer (storage, opts) {
 async function simulator () {
   if (argv._.length === 1) throw new Error('Must provide a script for the simulator to run.')
   const scriptPath = p.resolve(argv._[1])
-  const simulatorId = await getUnusedSocket()
+  const simulatorId = `hyperspace-simulator-${process.pid}`
   process.env.HYPERSPACE_SOCKET = simulatorId
 
   const server = createServer(ram, {
@@ -173,18 +173,6 @@ async function simulator () {
   async function close () {
     console.log('Shutting down simulator...')
     server.close().catch(onerror)
-  }
-
-  async function getUnusedSocket () {
-    const host = `hyperspace-simulator-${(Math.floor(Math.random() * 1e9)).toString(16)}`
-    const socketPath = getNetworkOptions({ host })
-    try {
-      await fs.stat(socketPath)
-      return getUnusedSocket()
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err
-      return host
-    }
   }
 }
 
