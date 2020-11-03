@@ -4,7 +4,8 @@
   "description": "Hypercores, batteries included.",
   "main": "index.js",
   "bin": {
-    "hyperspace": "bin.js"
+    "hyperspace": "bin/index.js",
+    "hyperspace-simulator": "bin/simulator.js"
   },
   "directories": {
     "test": "test"
