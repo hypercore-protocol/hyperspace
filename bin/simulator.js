@@ -25,7 +25,7 @@ main().catch(onerror)
 
 async function main () {
   if (!argv._.length) return console.error(help)
-  const scriptPath = p.resolve(argv._[0])
+  const scriptPath = p.resolve(argv._[0].toString())
   const simulatorId = `hyperspace-simulator-${process.pid}`
   process.env.HYPERSPACE_SOCKET = simulatorId
 
