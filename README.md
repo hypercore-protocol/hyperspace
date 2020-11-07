@@ -1,16 +1,16 @@
 # hyperspace
-[![Build Status](https://travis-ci.com/andrewosh/hyperspace.svg?token=WgJmQm3Kc6qzq1pzYrkx&branch=master)](https://travis-ci.com/andrewosh/hyperspace)
+[![Build Status](https://travis-ci.com/hypercore-protocol/hyperspace.svg?token=WgJmQm3Kc6qzq1pzYrkx&branch=master)](https://travis-ci.com/hypercore-protocol/hyperspace)
 
 > Hypercores, batteries included.
 
-Hyperspace is a lightweight server that provides remote access to Hypercores and a Hyperswarm instance. It exposes a simple [RPC interface](https://github.com/hyperspace-org/rpc) that can be accessed with the [Hyperspace client for Node.js](https://github.com/hyperspace-org/client).
+Hyperspace is a lightweight server that provides remote access to Hypercores and a Hyperswarm instance. It exposes a simple [RPC interface](https://github.com/hypercore-protocol/hyperspace-rpc) that can be accessed with the [Hyperspace client for Node.js](https://github.com/hypercore-protocol/hyperspace-client).
 
 The RPC API's designed to be minimal, maintaining parity with Hypercore and the [`@corestore/networker`](https://github.com/andrewosh/corestore-networker) but with few extras.
 
 Features include:
 * A `RemoteCorestore` interface for creating namespaced [`Corestore`](https://github.com/andrewosh/corestore) instances. 
 * A `RemoteNetworker` interface for managing [Hyperswarm DHT](https://github.com/hyperswarm/hyperswarm) connections. Supports stream-level extensions. 
-* A `RemoteHypercore` interface that feels exactly like normal ol' [`Hypercore`](https://github.com/hypercore-protocol/hypercore), with [few exceptions](TODO). Extensions included.
+* A `RemoteHypercore` interface that feels exactly like normal ol' [`Hypercore`](https://github.com/hypercore-protocol/hypercore), with [few exceptions](https://github.com/hypercore-protocol/hyperspace-client/issues?q=is%3Aopen+is%3Aissue+label%3Acompatibility). Extensions included.
 
 #### Already using the Hyperdrive daemon?
 With Hyperspace, most of the [Hyperdrive daemon's](https://github.com/hypercore-protocol/hyperdrive-daemon) functionality has been moved into "userland" -- instead of providing remote access to Hyperdrives, the regular [`hyperdrive`](https://github.com/hypercore-protocol/hyperdrive) module can be used with remote Hypercores.
@@ -46,7 +46,7 @@ By default, Hyperspace binds to a UNIX domain socket (or named pipe on Windows) 
 Once the server's started, you can use the client to create and manage remote Hypercores. If you'd like the use the Hyperdrive CLI, check out the [`@hyperspace/hyperdrive` docs](https://github.com/hyperspace-org/hyperdrive-service).
 
 ### API
-To work with Hyperspace, you'll probably want to start with the [Node.js client library](https://github.com/hyperspace-org/client). The README over there provides detailed API info.
+To work with Hyperspace, you'll probably want to start with the [Node.js client library](https://github.com/hypercore-protocol/hyperspace-client). The README over there provides detailed API info.
 
 ### License
 MIT
