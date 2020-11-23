@@ -459,7 +459,7 @@ test('can read a live stream', async t => {
   t.end()
 })
 
-test('can watch downloads and appends', async t => {
+test('can watch downloads, uploads, and appends', async t => {
   const { clients, cleanup } = await createMany(2)
 
   const client1 = clients[0]
@@ -477,8 +477,10 @@ test('can watch downloads and appends', async t => {
   const core2 = corestore2.get(core1.key)
   await core2.ready()
 
+  let uploads = 0
   let downloads = 0
   let appends = 0
+  core1.on('upload', () => (uploads++))
   core2.on('download', () => (downloads++))
   core2.on('append', () => (appends++))
 
@@ -494,6 +496,7 @@ test('can watch downloads and appends', async t => {
   t.same(block.toString('utf8'), 'zero')
   await downloadPromise
 
+  t.equal(uploads, 2, 'upload count correct')
   t.equal(downloads, 2, 'download count correct')
   t.equal(appends, 1, 'append count correct')
 
@@ -505,6 +508,7 @@ test('can watch downloads and appends', async t => {
   downloadPromise = watchDownloadPromise(core2, 4)
   await core2.download(4)
   await downloadPromise
+  t.equal(uploads, 3, 'upload counter after download correct')
   t.equal(downloads, 3, 'download counter after download correct')
 
   await cleanup()
