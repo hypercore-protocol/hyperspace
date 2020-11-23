@@ -478,10 +478,12 @@ test('can watch downloads, uploads, and appends', async t => {
   await core2.ready()
 
   let uploads = 0
+  let uploadBytes = 0
   let downloads = 0
+  let downloadBytes = 0
   let appends = 0
-  core1.on('upload', () => (uploads++))
-  core2.on('download', () => (downloads++))
+  core1.on('upload', (seq, byteLength) => { uploads++; uploadBytes += byteLength })
+  core2.on('download', (seq, byteLength) => { downloads++; downloadBytes += byteLength })
   core2.on('append', () => (appends++))
 
   await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
@@ -497,7 +499,9 @@ test('can watch downloads, uploads, and appends', async t => {
   await downloadPromise
 
   t.equal(uploads, 2, 'upload count correct')
+  t.equal(uploadBytes, 7, 'upload bytes correct')
   t.equal(downloads, 2, 'download count correct')
+  t.equal(downloadBytes, 7, 'download bytes correct')
   t.equal(appends, 1, 'append count correct')
 
   await core1.append(Buffer.from('three', 'utf8'))
@@ -508,7 +512,9 @@ test('can watch downloads, uploads, and appends', async t => {
   downloadPromise = watchDownloadPromise(core2, 4)
   await core2.download(4)
   await downloadPromise
+  t.equal(uploadBytes, 11, 'upload bytes after download correct')
   t.equal(uploads, 3, 'upload counter after download correct')
+  t.equal(downloadBytes, 11, 'download bytes after download correct')
   t.equal(downloads, 3, 'download counter after download correct')
 
   await cleanup()
