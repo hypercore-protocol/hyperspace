@@ -482,8 +482,8 @@ test('can watch downloads, uploads, and appends', async t => {
   let downloads = 0
   let downloadBytes = 0
   let appends = 0
-  core1.on('upload', (seq, data, byteLength) => { uploads++; uploadBytes += byteLength })
-  core2.on('download', (seq, data, byteLength) => { downloads++; downloadBytes += byteLength })
+  core1.on('upload', (seq, data) => { uploads++; uploadBytes += data.byteLength })
+  core2.on('download', (seq, data) => { downloads++; downloadBytes += data.byteLength })
   core2.on('append', () => (appends++))
 
   await client2.network.configure(core1.discoveryKey, { announce: false, lookup: true })
