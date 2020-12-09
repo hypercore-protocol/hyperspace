@@ -212,6 +212,11 @@ module.exports = class Hyperspace extends Nanoresource {
       remoteAddress: remoteAddress ? remoteAddress.host + ':' + remoteAddress.port : ''
     }
   }
+
+  async stop () {
+    await this.close()
+    process.exit(0)
+  }
 }
 
 function callAllInSet (set) {
