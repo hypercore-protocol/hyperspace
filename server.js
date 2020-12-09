@@ -213,9 +213,8 @@ module.exports = class Hyperspace extends Nanoresource {
     }
   }
 
-  async stop () {
-    await this.close()
-    process.exit(0)
+  stop () {
+    return this.close()
   }
 }
 
