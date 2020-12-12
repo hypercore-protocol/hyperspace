@@ -207,6 +207,7 @@ module.exports = class Hyperspace extends Nanoresource {
     const remoteAddress = swarm && swarm.remoteAddress()
     const holepunchable = swarm && swarm.holepunchable()
     return {
+      version: require('./package.json').version,
       apiVersion: require('@hyperspace/rpc/package.json').version,
       holepunchable: holepunchable,
       remoteAddress: remoteAddress ? remoteAddress.host + ':' + remoteAddress.port : ''
