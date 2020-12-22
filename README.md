@@ -48,5 +48,15 @@ Once the server's started, you can use the client to create and manage remote Hy
 ### API
 To work with Hyperspace, you'll probably want to start with the [Node.js client library](https://github.com/hyperspace-org/client). The README over there provides detailed API info.
 
+### Simulator
+
+Hyperspace includes a "simulator" that can be used to create one-off Hyperspace instances, which are useful for testing.
+
+```js
+const createHyperspaceSimulator = require('hyperspace/simulator')
+// client and server are instances of HyperspaceServer and HyperspaceClient that can be used for testing.
+const { client, server, cleanup } = await createHyperspaceSimulator()
+```
+
 ### License
 MIT
