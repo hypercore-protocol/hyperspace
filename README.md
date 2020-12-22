@@ -50,12 +50,12 @@ To work with Hyperspace, you'll probably want to start with the [Node.js client 
 
 ### Simulator
 
-Hyperspace includes a "simulator" that can be used to create one-off Hyperspace instances, which are useful for testing.
+Hyperspace includes a "simulator" that can be used to create one-off Hyperspace instances, which can be used for testing.
 
 ```js
-const createHyperspaceSimulator = require('hyperspace/simulator')
-// client and server are instances of HyperspaceServer and HyperspaceClient that can be used for testing.
-const { client, server, cleanup } = await createHyperspaceSimulator()
+const simulator = require('hyperspace/simulator')
+// client is a HyperspaceClient, server is a HyperspaceServer
+const { client, server, cleanup } = await simulator()
 ```
 
 ### License
