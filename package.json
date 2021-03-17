@@ -37,6 +37,7 @@
     "hypercore": "^9.5.4",
     "hypercore-cache": "^1.0.2",
     "hypercore-default-storage": "^1.0.0",
+    "hypercore-protocol": "^8.0.7",
     "hyperswarm": "^2.15.1",
     "hypertrie": "^5.1.1",
     "inspect-custom-symbol": "^1.1.1",

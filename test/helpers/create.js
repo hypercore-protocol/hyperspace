@@ -42,7 +42,7 @@ async function createMany (numDaemons, opts) {
     return bootstrapper.once('listening', resolve)
   })
   const bootstrapPort = bootstrapper.address().port
-  const bootstrapOpt = [`localhost:${bootstrapPort}}`]
+  const bootstrapOpt = [`localhost:${bootstrapPort}`]
 
   for (let i = 0; i < numDaemons; i++) {
     const serverOpts = opts ? Array.isArray(opts) ? opts[i] : opts : null

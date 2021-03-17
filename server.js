@@ -4,6 +4,7 @@ const os = require('os')
 const Corestore = require('corestore')
 const Networker = require('@corestore/networker')
 const HypercoreCache = require('hypercore-cache')
+const HypercoreProtocol = require('hypercore-protocol')
 const hypercoreStorage = require('hypercore-default-storage')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 
@@ -25,6 +26,7 @@ const DATA_CACHE_SIZE = TOTAL_CACHE_SIZE * (1 - CACHE_RATIO)
 const DEFAULT_STORAGE_DIR = path.join(os.homedir(), '.hyperspace', 'storage')
 const MAX_PEERS = 256
 const SWARM_PORT = 49737
+const NAMESPACE = '@hypercore-protocol/hyperspace'
 
 module.exports = class Hyperspace extends Nanoresource {
   constructor (opts = {}) {
@@ -78,8 +80,17 @@ module.exports = class Hyperspace extends Nanoresource {
   async _open () {
     await this.corestore.ready()
     await this.db.open()
-    this.networker = new Networker(this.corestore, this._networkOpts)
+
+    // Note: This API is not exposed anymore -- this is a temporary fix.
+    const seed = this.corestore.inner._deriveSecret(NAMESPACE, 'replication-keypair')
+    const swarmId = this.corestore.inner._deriveSecret(NAMESPACE, 'swarm-id')
+    this.networker = new Networker(this.corestore, {
+      keyPair: HypercoreProtocol.keyPair(seed),
+      id: swarmId,
+      ...this._networkOpts
+    })
     await this.networker.listen()
+
     this._registerCoreTimeouts()
     await this._rejoin()
 
