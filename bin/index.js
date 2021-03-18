@@ -22,7 +22,8 @@ const argv = minimist(process.argv.slice(2), {
   alias: {
     host: 'h',
     storage: 's',
-    bootstrap: 'b'
+    bootstrap: 'b',
+    'network-port': 'n'
   }
 })
 
@@ -33,14 +34,15 @@ ${version}
 
 Usage: hyperspace [options]
 
-  --host,      -h  Set unix socket name
-  --port       -p  Set the port (will use TCP)
-  --storage,   -s  Overwrite storage folder
-  --bootstrap, -b  Overwrite DHT bootstrap servers
-  --memory-only    Run all storage in memory
-  --no-announce    Disable all network annoucnes
-  --repl           Run a debug repl
-  --no-migrate     Disable the Hyperdrive Daemon migration
+  --host,         -h  Set unix socket name
+  --port          -p  Set the port (will use TCP)
+  --storage,      -s  Overwrite storage folder
+  --bootstrap,    -b  Overwrite DHT bootstrap servers
+  --network-port, -n  Set the network port to use
+  --memory-only       Run all storage in memory
+  --no-announce       Disable all network annoucnes
+  --repl              Run a debug repl
+  --no-migrate        Disable the Hyperdrive Daemon migration
 `
 
 if (argv.help) {
@@ -73,7 +75,7 @@ async function main () {
     host: argv.host,
     port: argv.port,
     storage,
-    network: argv.bootstrap ? { bootstrap: [].concat(argv.bootstrap) } : null,
+    network: { bootstrap: argv.bootstrap ? [].concat(argv.bootstrap) : undefined, preferredPort: argv.n || undefined, ephemeral: true },
     noAnnounce: !argv.announce,
     noMigrate: !argv.migrate
   })
