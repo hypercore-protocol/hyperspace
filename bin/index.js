@@ -40,7 +40,7 @@ Usage: hyperspace [options]
   --bootstrap,    -b  Overwrite DHT bootstrap servers
   --network-port, -n  Set the network port to use
   --memory-only       Run all storage in memory
-  --no-announce       Disable all network annoucnes
+  --no-announce       Disable all network announces
   --repl              Run a debug repl
   --no-migrate        Disable the Hyperdrive Daemon migration
 `
