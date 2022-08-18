@@ -1,3 +1,13 @@
+# NOTE
+
+The Hyperspace daemon is out of date, tracking the previous major version of the Hypercore stack.
+
+Check out the individual repos instead, like [Hypercore](https://github.com/hypercore-protocol/hypercore), [Hyperbee](https://github.com/hypercore-protocol/hyperbee), [Hyperbeam](https://github.com/mafintosh/hyperbeam), [Hyperswarm](https://github.com/hyperswarm), which don't require a deamon as well and are much more powerful for building P2P apps.
+
+If you have questions feel free to reach out on our Discord, https://chat.hypercore-protocol.org
+
+<details><summary>Click to see the Hyperspace README still</summary>
+
 # hyperspace
 [![Build Status](https://travis-ci.com/andrewosh/hyperspace.svg?token=WgJmQm3Kc6qzq1pzYrkx&branch=master)](https://travis-ci.com/andrewosh/hyperspace)
 
@@ -60,3 +70,5 @@ const { client, server, cleanup } = await simulator()
 
 ### License
 MIT
+
+</details>
