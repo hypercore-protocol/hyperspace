@@ -4,6 +4,7 @@ const os = require('os')
 const fs = require('fs').promises
 const repl = require('repl')
 const minimist = require('minimist')
+const RAM = require('random-access-memory')
 
 const { Server, Client } = require('../')
 const { migrate: migrateFromDaemon, isMigrated } = require('@hyperspace/migration-tool')
@@ -21,6 +22,7 @@ const argv = minimist(process.argv.slice(2), {
   },
   alias: {
     host: 'h',
+    port: 'p',
     storage: 's',
     bootstrap: 'b',
     'network-port': 'n'
@@ -69,7 +71,11 @@ async function main () {
   // For now, the storage path is determined as follows:
   // If ~/.hyperdrive/storage/cores exists, use that (from an old hyperdrive daemon installation)
   // Else, use ~/.hyperspace/storage
-  const storage = argv.storage ? argv.storage : await getStoragePath()
+  const storage = argv['memory-only']
+    ? getMemoryStorage()
+    : argv.storage ? argv.storage : await getStoragePath()
+
+  console.log(`Using '${storage}' for storage`)
 
   const s = new Server({
     host: argv.host,
@@ -144,6 +150,11 @@ async function getStoragePath () {
     if (err.code !== 'ENOENT') throw err
     return HYPERSPACE_STORAGE_DIR
   }
+}
+
+function getMemoryStorage () {
+  RAM.toString = () => 'RAM'
+  return RAM
 }
 
 function onerror (err) {
