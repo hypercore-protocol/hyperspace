@@ -1,5 +1,4 @@
-{
-  "name": "hyperspace",
+"name": "hyperspace",
   "version": "3.19.0",
   "description": "Hypercores, batteries included.",
   "main": "index.js",
